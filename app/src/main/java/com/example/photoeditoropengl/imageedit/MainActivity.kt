@@ -1,8 +1,9 @@
-package com.example.photoeditoropengl
+package com.example.photoeditoropengl.imageedit
 
 import android.content.Context
 import android.opengl.GLSurfaceView
 import android.os.Bundle
+import android.view.MotionEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -14,14 +15,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.photoeditoropengl.ui.theme.PhotoEditorOpenGlTheme
@@ -41,7 +43,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun OpenGLTriangleView(bitmapRenderer: BitmapRenderer): GLSurfaceView {
     val context = LocalContext.current
-    val glSurfaceView = remember { MyGlSurfaceViews(context) }
+    val glSurfaceView = remember { MyGlSurfaceViews(context,bitmapRenderer) }
 
     if (!glSurfaceView.isRendererSet) {
         glSurfaceView.setEGLContextClientVersion(2)
@@ -57,11 +59,30 @@ fun OpenGLTriangleView(bitmapRenderer: BitmapRenderer): GLSurfaceView {
     return glSurfaceView
 }
 
-class MyGlSurfaceViews(context: Context) : GLSurfaceView(context) {
+class MyGlSurfaceViews(context: Context,private val renderer: BitmapRenderer) : GLSurfaceView(context) {
     var isRendererSet: Boolean = false
+    private var currentPath: MutableList<FloatArray> = mutableListOf()
+
 
     init {
         setEGLContextClientVersion(2)
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        val normalizedX = (event.x / width) * 2 - 1
+        val normalizedY = -((event.y / height) * 2 - 1)
+
+        when (event.action) {
+            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
+                currentPath.add(floatArrayOf(normalizedX, normalizedY))
+                renderer.updateDoodlePath(currentPath)
+                requestRender()
+            }
+            MotionEvent.ACTION_UP -> {
+                // Finalize the path if needed
+            }
+        }
+        return true
     }
 }
 
@@ -70,6 +91,11 @@ fun TriangleScreen() {
     val context = LocalContext.current
     val bitmapRenderer = remember { BitmapRenderer(context) }
     val glSurfaceView = OpenGLTriangleView(bitmapRenderer)
+    val isExporting = remember { mutableStateOf(false) }
+
+    bitmapRenderer.setScreenshotSavedListener {
+        isExporting.value = false
+    }
 
     Scaffold { paddingValues ->
         Column(
@@ -84,6 +110,9 @@ fun TriangleScreen() {
                 contentAlignment = Alignment.Center
             ) {
                 OpenGLTriangleView(bitmapRenderer)
+                if (isExporting.value) {
+                    CircularProgressIndicator()
+                }
             }
 
             Row(modifier = Modifier.fillMaxWidth(),horizontalArrangement = Arrangement.SpaceBetween) {
@@ -99,8 +128,11 @@ fun TriangleScreen() {
 
                 Button(
                     onClick = {
-                        bitmapRenderer.requestScreenshot()
-                        glSurfaceView.requestRender()
+                        if (!isExporting.value) {
+                            isExporting.value = true
+                            bitmapRenderer.requestScreenshot()
+                            glSurfaceView.requestRender()
+                        }
                     },
                     modifier = Modifier
 
@@ -198,8 +230,7 @@ fun TriangleScreen() {
                         bitmapRenderer.setBackgroundColor(1.0f, 0.0f, 0.0f, 1.0f)
                         glSurfaceView.requestRender()
                     },
-                    modifier = Modifier
-                        .padding(2.dp)
+                    modifier = Modifier.padding(2.dp)
                 ) {
                     Text(text = "Bg Color")
                 }

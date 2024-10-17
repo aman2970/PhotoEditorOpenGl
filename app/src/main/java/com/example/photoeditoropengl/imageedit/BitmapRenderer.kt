@@ -1,4 +1,4 @@
-package com.example.photoeditoropengl
+package com.example.photoeditoropengl.imageedit
 
 import android.content.ContentValues
 import android.content.Context
@@ -11,10 +11,10 @@ import android.opengl.Matrix
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
+import com.example.photoeditoropengl.R
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
-import java.nio.IntBuffer
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -27,7 +27,16 @@ class BitmapRenderer(private val context: Context) : GLSurfaceView.Renderer {
     private var translateY = 0.0f
     private var isUsingTint = false
     private var isUsingGrayscale = false
+    private var framebuffer = 0
+    private var framebufferTexture = 0
+    private var depthRenderbuffer = 0
     @Volatile private var shouldSaveScreenshot = false
+    @Volatile private var isProcessingScreenshot = false
+
+
+    private var doodlePaths = mutableListOf<FloatArray>()
+    private lateinit var doodleBuffer: FloatBuffer
+
 
     private val vertices = floatArrayOf(
         -0.5f, -0.5f, 0.0f,  // Bottom-left
@@ -63,15 +72,70 @@ class BitmapRenderer(private val context: Context) : GLSurfaceView.Renderer {
         initializeBuffers()
         loadTexture()
         initializeShaderProgram()
+
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
-        GLES20.glViewport(0, 0, width, height)
         viewportWidth = width
         viewportHeight = height
+        GLES20.glViewport(0, 0, width, height)
+
+        initializeFramebuffer()
+
+    }
+
+    private fun initializeFramebuffer() {
+        if (framebuffer != 0) {
+            GLES20.glDeleteFramebuffers(1, intArrayOf(framebuffer), 0)
+        }
+        if (framebufferTexture != 0) {
+            GLES20.glDeleteTextures(1, intArrayOf(framebufferTexture), 0)
+        }
+        if (depthRenderbuffer != 0) {
+            GLES20.glDeleteRenderbuffers(1, intArrayOf(depthRenderbuffer), 0)
+        }
+
+        val fboIds = IntArray(1)
+        GLES20.glGenFramebuffers(1, fboIds, 0)
+        framebuffer = fboIds[0]
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, framebuffer)
+
+        val textureIds = IntArray(1)
+        GLES20.glGenTextures(1, textureIds, 0)
+        framebufferTexture = textureIds[0]
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, framebufferTexture)
+
+        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, viewportWidth, viewportHeight, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null)
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR)
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR)
+
+        val depthRenderBufferIds = IntArray(1)
+        GLES20.glGenRenderbuffers(1, depthRenderBufferIds, 0)
+        depthRenderbuffer = depthRenderBufferIds[0]
+        GLES20.glBindRenderbuffer(GLES20.GL_RENDERBUFFER, depthRenderbuffer)
+        GLES20.glRenderbufferStorage(GLES20.GL_RENDERBUFFER, GLES20.GL_DEPTH_COMPONENT16, viewportWidth, viewportHeight)
+
+        GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, framebufferTexture, 0)
+        GLES20.glFramebufferRenderbuffer(GLES20.GL_FRAMEBUFFER, GLES20.GL_DEPTH_ATTACHMENT, GLES20.GL_RENDERBUFFER, depthRenderbuffer)
+
+        val status = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER)
+        if (status != GLES20.GL_FRAMEBUFFER_COMPLETE) {
+            Log.e("BitmapRenderer", "Framebuffer is not complete: $status")
+            when (status) {
+                GLES20.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT -> Log.e("BitmapRenderer", "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT")
+                GLES20.GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS -> Log.e("BitmapRenderer", "GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS")
+                GLES20.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT -> Log.e("BitmapRenderer", "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT")
+                GLES20.GL_FRAMEBUFFER_UNSUPPORTED -> Log.e("BitmapRenderer", "GL_FRAMEBUFFER_UNSUPPORTED")
+            }
+            throw RuntimeException("Framebuffer is not complete: $status")
+        }
+
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0)
     }
 
     override fun onDrawFrame(gl: GL10?) {
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0)
+
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
         GLES20.glClearColor(backgroundColor[0], backgroundColor[1], backgroundColor[2], backgroundColor[3])
         GLES20.glUseProgram(program)
@@ -80,10 +144,49 @@ class BitmapRenderer(private val context: Context) : GLSurfaceView.Renderer {
         setUpShaderAttributes()
         drawImage()
 
-        if (shouldSaveScreenshot) {
+
+        if (doodlePaths.isNotEmpty()) {
+            drawDoodle()
+        }
+
+        if (shouldSaveScreenshot && !isProcessingScreenshot) {
+            isProcessingScreenshot = true
             saveScreenshot()
             shouldSaveScreenshot = false
+            isProcessingScreenshot = false
         }
+    }
+
+    fun updateDoodlePath(path: List<FloatArray>) {
+        doodlePaths = path.toMutableList()
+        val doodleVertices = FloatArray(doodlePaths.size * 2)
+        for ((i, point) in doodlePaths.withIndex()) {
+            doodleVertices[i * 2] = point[0]
+            doodleVertices[i * 2 + 1] = point[1]
+        }
+        doodleBuffer = ByteBuffer.allocateDirect(doodleVertices.size * 4)
+            .order(ByteOrder.nativeOrder())
+            .asFloatBuffer()
+            .put(doodleVertices)
+        doodleBuffer.position(0)
+    }
+
+    private fun drawDoodle() {
+        GLES20.glUseProgram(program)
+
+        GLES20.glLineWidth(5.0f)
+
+        val colorHandle = GLES20.glGetUniformLocation(program, "u_Color")
+        GLES20.glUniform4f(colorHandle, 1.0f, 0.0f, 0.0f, 1.0f)
+
+
+        val positionHandle = GLES20.glGetAttribLocation(program, "a_Position")
+        GLES20.glEnableVertexAttribArray(positionHandle)
+        GLES20.glVertexAttribPointer(positionHandle, 2, GLES20.GL_FLOAT, false, 0, doodleBuffer)
+
+        GLES20.glDrawArrays(GLES20.GL_LINE_STRIP, 0, doodlePaths.size)
+
+        GLES20.glDisableVertexAttribArray(positionHandle)
     }
 
     private fun initializeBuffers() {
@@ -101,7 +204,7 @@ class BitmapRenderer(private val context: Context) : GLSurfaceView.Renderer {
     }
 
     private fun loadTexture() {
-        val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.ic_emoji)
+        val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.ic_pic)
         val textureIds = IntArray(1)
         GLES20.glGenTextures(1, textureIds, 0)
         textureId = textureIds[0]
@@ -171,7 +274,9 @@ class BitmapRenderer(private val context: Context) : GLSurfaceView.Renderer {
     }
 
     fun requestScreenshot() {
-        shouldSaveScreenshot = true
+        if (!isProcessingScreenshot) {
+            shouldSaveScreenshot = true
+        }
     }
 
     fun moveRight() {
@@ -206,23 +311,37 @@ class BitmapRenderer(private val context: Context) : GLSurfaceView.Renderer {
     }
 
     private fun saveScreenshot() {
-        val buffer = IntArray(viewportWidth * viewportHeight)
-        val byteBuffer = IntBuffer.wrap(buffer)
-        byteBuffer.position(0)
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, framebuffer)
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
+        GLES20.glUseProgram(program)
 
-        GLES20.glReadPixels(0, 0, viewportWidth, viewportHeight, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, byteBuffer)
+        setUpModelViewMatrix()
+        setUpShaderAttributes()
+        drawImage()
 
+        val buffer = ByteBuffer.allocateDirect(viewportWidth * viewportHeight * 4)
+        buffer.order(ByteOrder.nativeOrder())
+        GLES20.glReadPixels(0, 0, viewportWidth, viewportHeight, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, buffer)
+
+        buffer.rewind()
         val bitmap = Bitmap.createBitmap(viewportWidth, viewportHeight, Bitmap.Config.ARGB_8888)
-        bitmap.copyPixelsFromBuffer(IntBuffer.wrap(buffer))
+        bitmap.copyPixelsFromBuffer(buffer)
 
-        val invertedBitmap = Bitmap.createBitmap(viewportWidth, viewportHeight, Bitmap.Config.ARGB_8888)
+        val flippedBitmap = Bitmap.createBitmap(viewportWidth, viewportHeight, Bitmap.Config.ARGB_8888)
         for (y in 0 until viewportHeight) {
             for (x in 0 until viewportWidth) {
-                invertedBitmap.setPixel(x, viewportHeight - y - 1, bitmap.getPixel(x, y))
+                flippedBitmap.setPixel(x, viewportHeight - y - 1, bitmap.getPixel(x, y))
             }
         }
 
-        saveImageToGallery(invertedBitmap)
+        saveImageToGallery(flippedBitmap)
+
+        bitmap.recycle()
+        flippedBitmap.recycle()
+
+        screenshotSavedListener?.invoke()
+
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0)
     }
 
     private fun saveImageToGallery(bitmap: Bitmap) {
@@ -298,4 +417,22 @@ class BitmapRenderer(private val context: Context) : GLSurfaceView.Renderer {
             }
         """
     }
+
+    private var screenshotSavedListener: (() -> Unit)? = null
+
+    fun setScreenshotSavedListener(listener: () -> Unit) {
+        screenshotSavedListener = listener
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+

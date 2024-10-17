@@ -1,0 +1,79 @@
+package com.example.photoeditoropengl
+
+import android.content.Intent
+import android.net.Uri
+import android.os.Bundle
+import android.provider.MediaStore
+import android.util.Log
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.photoeditoropengl.ui.theme.PhotoEditorOpenGlTheme
+import com.example.photoeditoropengl.videeoedit.VideoEditActivity
+
+class PickerActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        val videoPickerLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            val videoUri: Uri? = result.data?.data
+            videoUri?.let {
+                val videoPath = getRealPathFromUri(it)
+                videoPath?.let { path->
+                    val intent = Intent(this,VideoEditActivity::class.java)
+                    intent.putExtra("videoPath",path)
+                    startActivity(intent)
+                }
+            }
+        }
+
+        setContent {
+            PhotoEditorOpenGlTheme {
+                VideoPicker{
+                    val intent = Intent(Intent.ACTION_PICK, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
+                    videoPickerLauncher.launch(intent)
+                }
+            }
+        }
+    }
+
+    fun getRealPathFromUri(contentUri: Uri): String? {
+        var cursor = contentResolver.query(contentUri, arrayOf(MediaStore.Video.Media.DATA), null, null, null)
+        cursor?.use {
+            val columnIndex = it.getColumnIndexOrThrow(MediaStore.Video.Media.DATA)
+            if (it.moveToFirst()) {
+                return it.getString(columnIndex)
+            }
+        }
+        return null
+    }
+
+}
+
+@Composable
+fun VideoPicker(onPickVideo:() -> Unit){
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Button(
+            onClick = {onPickVideo()},
+            modifier = Modifier.align(Alignment.Center)
+        ) {
+            Text("Pick Video")
+        }
+    }
+}
+
