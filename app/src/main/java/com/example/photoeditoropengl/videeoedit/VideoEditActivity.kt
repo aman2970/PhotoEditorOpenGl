@@ -3,6 +3,7 @@ package com.example.photoeditoropengl.videeoedit
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -20,6 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.example.photoeditoropengl.ui.theme.PhotoEditorOpenGlTheme
 import com.example.photoeditoropengl.videeoedit.filter.GlGrayScaleFilter
 import com.example.photoeditoropengl.videeoedit.helper.GlFilter
@@ -46,6 +49,12 @@ class VideoEditActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         videoUriString = intent.getStringExtra("videoPath")
+
+
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), 1001)
+        }
 
         setContent {
             PhotoEditorOpenGlTheme {
