@@ -3,15 +3,15 @@ package com.example.photoeditoropengl.videeoedit.view
 import android.content.Context
 import android.opengl.GLSurfaceView
 import android.util.AttributeSet
+import androidx.media3.common.Player
+import androidx.media3.common.VideoSize
+import androidx.media3.exoplayer.ExoPlayer
 import com.example.photoeditoropengl.videeoedit.helper.GlPlayerRenderer
 import com.example.photoeditoropengl.videeoedit.helper.GlConfig
 import com.example.photoeditoropengl.videeoedit.helper.GlContextFactory
 import com.example.photoeditoropengl.videeoedit.helper.GlFilter
 import com.example.photoeditoropengl.videeoedit.helper.PlayerScaleType
 
-import com.google.android.exoplayer2.ExoPlayer
-import com.google.android.exoplayer2.Player
-import com.google.android.exoplayer2.video.VideoSize
 
 
 class OpenGlPlayerView @JvmOverloads constructor(

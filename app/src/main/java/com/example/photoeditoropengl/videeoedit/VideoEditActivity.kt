@@ -23,6 +23,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
 import com.example.photoeditoropengl.ui.theme.PhotoEditorOpenGlTheme
 import com.example.photoeditoropengl.videeoedit.filter.GlGrayScaleFilter
 import com.example.photoeditoropengl.videeoedit.helper.GlFilter
@@ -30,9 +33,6 @@ import com.example.photoeditoropengl.videeoedit.videosave.FillMode
 import com.example.photoeditoropengl.videeoedit.videosave.GlMp4Composer
 import com.example.photoeditoropengl.videeoedit.view.OpenGlPlayerView
 import com.example.photoeditoropengl.videeoedit.view.VideoPlayerWrapperView
-import com.google.android.exoplayer2.ExoPlayer
-import com.google.android.exoplayer2.MediaItem
-import com.google.android.exoplayer2.Player
 import kotlinx.coroutines.delay
 import java.io.File
 import java.io.IOException

@@ -7,9 +7,9 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.Surface
+import androidx.media3.exoplayer.ExoPlayer
 
 import com.example.photoeditoropengl.videeoedit.view.OpenGlPlayerView
-import com.google.android.exoplayer2.ExoPlayer
 import javax.microedition.khronos.egl.EGLConfig
 
 class GlPlayerRenderer(private val glPreview: OpenGlPlayerView) : GlFrameBufferObjectRenderer(), SurfaceTexture.OnFrameAvailableListener {
