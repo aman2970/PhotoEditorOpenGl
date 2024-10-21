@@ -226,8 +226,7 @@ fun VideoEditingScreen(videoUri: String, isExporting: Boolean,onExport: (Boolean
                 }
             },
             modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(16f / 9f),
+                .fillMaxWidth(),
             update = { videoPlayerWrapperView ->
                 val view = videoPlayerWrapperView.getChildAt(0) as? OpenGlPlayerView
                 view?.setExoPlayer(player)
@@ -268,16 +267,16 @@ fun VideoEditingScreen(videoUri: String, isExporting: Boolean,onExport: (Boolean
             }
 
             Button(onClick = {
-                if (currentSpeed > 0.25f) {
-                    currentSpeed -= 0.25f
+                if (currentSpeed > 0.5f) {
+                    currentSpeed -= 0.5f
                     player?.setPlaybackSpeed(currentSpeed)
                 }
             }) {
                 Text("Slow")
             }
             Button(onClick = {
-                if (currentSpeed < 4.0f) {
-                    currentSpeed += 0.25f
+                if (currentSpeed < 2.0f) {
+                    currentSpeed += 0.5f
                     player?.setPlaybackSpeed(currentSpeed)
                 }
             }) {
@@ -292,6 +291,15 @@ fun VideoEditingScreen(videoUri: String, isExporting: Boolean,onExport: (Boolean
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
+
+            Button(onClick = {
+                isFilterApplied = true
+                openGlPlayerView?.setGlFilter(GlGrayScaleFilter())
+            }) {
+                Text("Watermark")
+            }
+
+
             Button(onClick = {
                 isFilterApplied = true
                 openGlPlayerView?.setGlFilter(GlGrayScaleFilter())

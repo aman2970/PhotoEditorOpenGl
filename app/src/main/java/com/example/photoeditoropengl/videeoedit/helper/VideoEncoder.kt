@@ -65,7 +65,6 @@ class VideoEncoder(
             val inputBuffer = inputBuffers?.get(inputBufferIndex)
             inputBuffer?.clear()
 
-            // Convert pixelData (RGBA) to the correct format and fill the inputBuffer
             inputBuffer?.asIntBuffer()?.put(pixelData)
 
             val presentationTimeUs = System.nanoTime() / 1000
