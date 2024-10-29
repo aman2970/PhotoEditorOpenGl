@@ -59,26 +59,32 @@ class VideoEditActivity : ComponentActivity() {
         setContent {
             PhotoEditorOpenGlTheme {
                 videoUriString?.let {
-                    VideoEditingScreen(it,isExporting) {isFilterApplied,isMute ->
-                        startCodec(isFilterApplied,isMute)
+                    VideoEditingScreen(it,isExporting) {isFilterApplied,isMute,currentSpeed ->
+                        startCodec(isFilterApplied,isMute,currentSpeed)
                     }
                 }
             }
         }
     }
 
-    private fun startCodec(isFilterApplied:Boolean,isMute:Boolean) {
+    private fun startCodec(isFilterApplied:Boolean, isMute:Boolean, currentSpeed:Int) {
         isExporting = true
+        var speed = currentSpeed
         val destinationPath = getVideoFilePath()
-        Log.d("data>>>", "src_path>>> $videoUriString")
-        Log.d("data>>>", "dst_path>>> $destinationPath")
+        Log.d("data>>>", "currentSpeed>>> $currentSpeed")
 
         val selectedFilter = if(isFilterApplied) GlGrayScaleFilter() else GlFilter()
+
+        if(speed == 0){
+            speed = 1
+        }
 
         GlMp4Composer(this, videoUriString!!, destinationPath)
             .fillMode(FillMode.PRESERVE_ASPECT_CROP)
             .filter(selectedFilter)
             .mute(isMute)
+            .size(1920,1080)
+            .timeScale(speed)
             .listener(object : GlMp4Composer.Listener {
                 override fun onProgress(progress: Double) {
                     Log.d("data>>>", "progressing $progress")
@@ -86,13 +92,7 @@ class VideoEditActivity : ComponentActivity() {
 
                 override fun onCompleted() {
                     exportMp4ToGallery(applicationContext, destinationPath)
-                    runOnUiThread {
-                        Toast.makeText(
-                            this@VideoEditActivity,
-                            "video_path = $videoUriString",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
+                    runOnUiThread { Toast.makeText(this@VideoEditActivity, "video_path = $videoUriString", Toast.LENGTH_SHORT).show() }
                     isExporting = false
                 }
 
@@ -132,8 +132,7 @@ class VideoEditActivity : ComponentActivity() {
 
         val videoCollection: Uri
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            videoCollection =
-                MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+            videoCollection = MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
             values.put(MediaStore.Video.Media.RELATIVE_PATH, Environment.DIRECTORY_MOVIES)
             values.put(MediaStore.Video.Media.IS_PENDING, 1)
 
@@ -167,7 +166,7 @@ class VideoEditActivity : ComponentActivity() {
 }
 
 @Composable
-fun VideoEditingScreen(videoUri: String, isExporting: Boolean,onExport: (Boolean,Boolean) -> Unit) {
+fun VideoEditingScreen(videoUri: String, isExporting: Boolean,onExport: (Boolean,Boolean,Int) -> Unit) {
     val context = LocalContext.current
     var player by remember { mutableStateOf<ExoPlayer?>(null) }
     var isPlaying by remember { mutableStateOf(true) }
@@ -275,8 +274,8 @@ fun VideoEditingScreen(videoUri: String, isExporting: Boolean,onExport: (Boolean
                 Text("Slow")
             }
             Button(onClick = {
-                if (currentSpeed < 2.0f) {
-                    currentSpeed += 0.5f
+                if (currentSpeed < 3.0f) {
+                    currentSpeed += 1.0f
                     player?.setPlaybackSpeed(currentSpeed)
                 }
             }) {
@@ -314,12 +313,22 @@ fun VideoEditingScreen(videoUri: String, isExporting: Boolean,onExport: (Boolean
                 Text("Default")
             }
 
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+
             Button(onClick = {
-                onExport(isFilterApplied,isMute)
+                onExport(isFilterApplied,isMute,currentSpeed.toInt())
             }) {
                 Text("Export")
             }
+
         }
+
 
         if (isExporting) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
