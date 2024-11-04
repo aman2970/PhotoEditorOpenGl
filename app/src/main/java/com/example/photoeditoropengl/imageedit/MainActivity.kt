@@ -140,16 +140,6 @@ fun TriangleScreen() {
                     Text(text = "Export")
                 }
 
-                Button(
-                    onClick = {
-                        bitmapRenderer.increaseImageSize()
-                        glSurfaceView.requestRender()
-                    },
-                    modifier = Modifier
-
-                ) {
-                    Text(text = "Scale")
-                }
 
                 Button(
                     onClick = {
@@ -233,6 +223,28 @@ fun TriangleScreen() {
                     modifier = Modifier.padding(2.dp)
                 ) {
                     Text(text = "Bg Color")
+                }
+
+                Button(
+                    onClick = {
+                        bitmapRenderer.increaseImageSize()
+                        glSurfaceView.requestRender()
+                    },
+                    modifier = Modifier
+
+                ) {
+                    Text(text = "ScaleUp")
+                }
+
+                Button(
+                    onClick = {
+                        bitmapRenderer.decreaseImageSize()
+                        glSurfaceView.requestRender()
+                    },
+                    modifier = Modifier
+
+                ) {
+                    Text(text = "ScaleDown")
                 }
 
             }

@@ -78,11 +78,11 @@ open class GlFilter {
         this.fragmentShaderSource = fragmentShaderSource
     }
 
-    fun setFrameSize(width: Int, height: Int) {
+    open fun setFrameSize(width: Int, height: Int) {
         // Do nothing
     }
 
-    fun release() {
+    open fun release() {
         GLES20.glDeleteProgram(program)
         program = 0
         GLES20.glDeleteShader(vertexShader)

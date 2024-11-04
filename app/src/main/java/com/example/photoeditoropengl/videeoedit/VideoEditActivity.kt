@@ -4,6 +4,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -26,7 +27,10 @@ import androidx.core.content.ContextCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import com.example.photoeditoropengl.R
 import com.example.photoeditoropengl.ui.theme.PhotoEditorOpenGlTheme
+import com.example.photoeditoropengl.videeoedit.filter.GlBitmapOverlaySample
+import com.example.photoeditoropengl.videeoedit.filter.GlCustomOverlayFilter
 import com.example.photoeditoropengl.videeoedit.filter.GlGrayScaleFilter
 import com.example.photoeditoropengl.videeoedit.helper.GlFilter
 import com.example.photoeditoropengl.videeoedit.videosave.FillMode
@@ -59,21 +63,35 @@ class VideoEditActivity : ComponentActivity() {
         setContent {
             PhotoEditorOpenGlTheme {
                 videoUriString?.let {
-                    VideoEditingScreen(it,isExporting) {isFilterApplied,isMute,currentSpeed ->
-                        startCodec(isFilterApplied,isMute,currentSpeed)
+                    VideoEditingScreen(it,isExporting) {isFilterApplied,isMute,currentSpeed,isOverlayApplied ->
+                        startCodec(isFilterApplied,isMute,currentSpeed,isOverlayApplied)
                     }
                 }
             }
         }
     }
 
-    private fun startCodec(isFilterApplied:Boolean, isMute:Boolean, currentSpeed:Int) {
+    private fun startCodec(isFilterApplied:Boolean, isMute:Boolean, currentSpeed:Int,isOverlayApplied:Boolean) {
         isExporting = true
         var speed = currentSpeed
         val destinationPath = getVideoFilePath()
         Log.d("data>>>", "currentSpeed>>> $currentSpeed")
 
-        val selectedFilter = if(isFilterApplied) GlGrayScaleFilter() else GlFilter()
+        val selectedFilter = if(isFilterApplied) {
+            GlGrayScaleFilter()
+        }else if(isOverlayApplied){
+            val overlayBitmap = BitmapFactory.decodeResource(resources, R.drawable.ic_emoji)
+
+            GlCustomOverlayFilter(
+                overlayBitmap = overlayBitmap,
+                overlayScale = 0.3f,
+                xPosition = 0.1f,
+                yPosition = 0.1f
+            )
+
+        }else{
+            GlFilter()
+        }
 
         if(speed == 0){
             speed = 1
@@ -166,7 +184,7 @@ class VideoEditActivity : ComponentActivity() {
 }
 
 @Composable
-fun VideoEditingScreen(videoUri: String, isExporting: Boolean,onExport: (Boolean,Boolean,Int) -> Unit) {
+fun VideoEditingScreen(videoUri: String, isExporting: Boolean,onExport: (Boolean,Boolean,Int,Boolean) -> Unit) {
     val context = LocalContext.current
     var player by remember { mutableStateOf<ExoPlayer?>(null) }
     var isPlaying by remember { mutableStateOf(true) }
@@ -179,6 +197,7 @@ fun VideoEditingScreen(videoUri: String, isExporting: Boolean,onExport: (Boolean
     var openGlPlayerView by remember { mutableStateOf<OpenGlPlayerView?>(null) }
 
     var isFilterApplied by remember{mutableStateOf(false)}
+    var isOverlayApplied by remember { mutableStateOf(false) }
 
     val videoUrls = listOf(videoUri)
 
@@ -265,7 +284,7 @@ fun VideoEditingScreen(videoUri: String, isExporting: Boolean,onExport: (Boolean
                 Text(if (isMute) "Unmute" else "Mute")
             }
 
-            Button(onClick = {
+          /*  Button(onClick = {
                 if (currentSpeed > 0.5f) {
                     currentSpeed -= 0.5f
                     player?.setPlaybackSpeed(currentSpeed)
@@ -280,7 +299,7 @@ fun VideoEditingScreen(videoUri: String, isExporting: Boolean,onExport: (Boolean
                 }
             }) {
                 Text("Fast")
-            }
+            }*/
         }
 
 
@@ -292,8 +311,16 @@ fun VideoEditingScreen(videoUri: String, isExporting: Boolean,onExport: (Boolean
         ) {
 
             Button(onClick = {
-                isFilterApplied = true
-                openGlPlayerView?.setGlFilter(GlGrayScaleFilter())
+                isOverlayApplied = true
+                val overlayBitmap = BitmapFactory.decodeResource(context.resources, R.drawable.ic_emoji)
+
+                val customOverlayFilter = GlCustomOverlayFilter(
+                    overlayBitmap = overlayBitmap,
+                    overlayScale = 0.3f,
+                    xPosition = 0.1f,
+                    yPosition = 0.1f
+                )
+                openGlPlayerView?.setGlFilter(customOverlayFilter)
             }) {
                 Text("Watermark")
             }
@@ -322,7 +349,7 @@ fun VideoEditingScreen(videoUri: String, isExporting: Boolean,onExport: (Boolean
         ) {
 
             Button(onClick = {
-                onExport(isFilterApplied,isMute,currentSpeed.toInt())
+                onExport(isFilterApplied,isMute,currentSpeed.toInt(),isOverlayApplied)
             }) {
                 Text("Export")
             }

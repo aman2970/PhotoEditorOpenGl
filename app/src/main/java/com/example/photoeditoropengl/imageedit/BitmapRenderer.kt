@@ -32,7 +32,10 @@ class BitmapRenderer(private val context: Context) : GLSurfaceView.Renderer {
     private var depthRenderbuffer = 0
     @Volatile private var shouldSaveScreenshot = false
     @Volatile private var isProcessingScreenshot = false
-
+    private var textureWidth = 0
+    private var textureHeight = 0
+    private var pendingChanges = false
+    private var frameCount = 0
 
     private var doodlePaths = mutableListOf<FloatArray>()
     private lateinit var doodleBuffer: FloatBuffer
@@ -72,7 +75,17 @@ class BitmapRenderer(private val context: Context) : GLSurfaceView.Renderer {
         initializeBuffers()
         loadTexture()
         initializeShaderProgram()
+    }
 
+    private fun adjustScaleToFillSurface() {
+        val imageAspectRatio = textureWidth.toFloat() / textureHeight
+        val viewAspectRatio = viewportWidth.toFloat() / viewportHeight
+
+        scaleFactor = if (viewAspectRatio > imageAspectRatio) {
+            viewportHeight.toFloat() / textureHeight
+        } else {
+            viewportWidth.toFloat() / textureWidth
+        }
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
@@ -81,6 +94,8 @@ class BitmapRenderer(private val context: Context) : GLSurfaceView.Renderer {
         GLES20.glViewport(0, 0, width, height)
 
         initializeFramebuffer()
+
+       // adjustScaleToFillSurface()
 
     }
 
@@ -155,6 +170,7 @@ class BitmapRenderer(private val context: Context) : GLSurfaceView.Renderer {
             shouldSaveScreenshot = false
             isProcessingScreenshot = false
         }
+
     }
 
     fun updateDoodlePath(path: List<FloatArray>) {
@@ -205,6 +221,8 @@ class BitmapRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
     private fun loadTexture() {
         val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.ic_pic)
+        textureWidth = bitmap.width
+        textureHeight = bitmap.height
         val textureIds = IntArray(1)
         GLES20.glGenTextures(1, textureIds, 0)
         textureId = textureIds[0]
@@ -273,6 +291,10 @@ class BitmapRenderer(private val context: Context) : GLSurfaceView.Renderer {
         scaleFactor *= 1.5f
     }
 
+    fun decreaseImageSize() {
+        scaleFactor /= 1.5f
+    }
+
     fun requestScreenshot() {
         if (!isProcessingScreenshot) {
             shouldSaveScreenshot = true
@@ -318,6 +340,8 @@ class BitmapRenderer(private val context: Context) : GLSurfaceView.Renderer {
         setUpModelViewMatrix()
         setUpShaderAttributes()
         drawImage()
+
+        GLES20.glFinish()
 
         val buffer = ByteBuffer.allocateDirect(viewportWidth * viewportHeight * 4)
         buffer.order(ByteOrder.nativeOrder())
