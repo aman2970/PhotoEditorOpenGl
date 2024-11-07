@@ -3,4 +3,5 @@
     <string name="title_activity_timeline_view_screen">TimelineViewScreen</string>
     <string name="title_activity_video_edit">VideoEditActivity</string>
     <string name="title_activity_picker">PickerActivity</string>
+    <string name="title_activity_motion_control">MotionControlActivity</string>
 </resources>

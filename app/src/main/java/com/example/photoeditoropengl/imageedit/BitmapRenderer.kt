@@ -22,7 +22,7 @@ class BitmapRenderer(private val context: Context) : GLSurfaceView.Renderer {
     private var rotationAngle = 0f
     private var viewportWidth = 0
     private var viewportHeight = 0
-    private var scaleFactor = 1.0f
+    private var scaleFactor = 0.5f
     private var translateX = 0.0f
     private var translateY = 0.0f
     private var isUsingTint = false
@@ -77,25 +77,23 @@ class BitmapRenderer(private val context: Context) : GLSurfaceView.Renderer {
         initializeShaderProgram()
     }
 
-    private fun adjustScaleToFillSurface() {
-        val imageAspectRatio = textureWidth.toFloat() / textureHeight
-        val viewAspectRatio = viewportWidth.toFloat() / viewportHeight
-
-        scaleFactor = if (viewAspectRatio > imageAspectRatio) {
-            viewportHeight.toFloat() / textureHeight
-        } else {
-            viewportWidth.toFloat() / textureWidth
-        }
-    }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
+        viewportWidth = width
+   /*     viewportHeight = height
+        GLES20.glViewport(0, 0, width, height)
+
+        initializeFramebuffer()*/
         viewportWidth = width
         viewportHeight = height
         GLES20.glViewport(0, 0, width, height)
 
         initializeFramebuffer()
 
-       // adjustScaleToFillSurface()
+
+        translateX = 0.0f
+        translateY = 0.0f
+
 
     }
 
@@ -220,7 +218,7 @@ class BitmapRenderer(private val context: Context) : GLSurfaceView.Renderer {
     }
 
     private fun loadTexture() {
-        val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.ic_pic)
+        val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.ic_test_image)
         textureWidth = bitmap.width
         textureHeight = bitmap.height
         val textureIds = IntArray(1)
@@ -319,6 +317,19 @@ class BitmapRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
     fun toggleTint() {
         isUsingTint = !isUsingTint
+    }
+
+    fun updatePosition(x:Float,y:Float) {
+        translateX = x
+        translateY =y
+    }
+
+    fun updateRotation(currentRotation:Float){
+        rotationAngle = currentRotation
+    }
+
+    fun updateScale(currentScale:Float){
+        scaleFactor = currentScale
     }
 
     fun toggleGrayscale() {
