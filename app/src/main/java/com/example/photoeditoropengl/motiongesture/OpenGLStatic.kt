@@ -26,23 +26,8 @@ import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
 
-/**
- * Singleton with static methods that are used to load shader, check OpenGL error,
- * read string file from raw directory, load drawable resources and resize bitmap.
- */
 object OpenGLStatic {
 
-    /**
-     * Rotate point around given center(pivot point) and return the result point, a existing PointF object
-     * can be given so no new object has to be created each time the method is called.
-     * @param cx center point x coordinate
-     * @param cy center point y coordinate
-     * @param x point that will be rotated x coordinate
-     * @param y point that will be rotated y coordinate
-     * @param angle angle of the rotation in degrees
-     * @param antiClockwise if the rotation should be done anti-clockwise
-     * @param result existing PointF object where the result with the new location of the rotated point will be saved
-     */
     fun rotate(cx: Float, cy: Float, x: Float, y: Float, angle: Float, antiClockwise: Boolean = false, result: PointF = PointF()): PointF {
 
         // if the angle is zero return the same point
@@ -68,14 +53,7 @@ object OpenGLStatic {
         return result
     }
 
-    /**
-     * Concat two float array, at given index and values per index. This method is used to add new coordinate to
-     * a existing float array, for example if new line is added it has 2 vertex with 2 x,y coordinate values for
-     * each vertex, that gives total of 4 coordinate values per line.
-     * @param i index where to start putting the values from the other array
-     * @param array the other array, that will be merged with current float array
-     * @param valuesPerIndex how many values from the array are transferred per index
-     */
+
     fun FloatArray.concat(i: Int, array: FloatArray, valuesPerIndex: Int): FloatArray {
 
         val result = FloatArray(this.size + array.size)
@@ -99,11 +77,7 @@ object OpenGLStatic {
         return result
     }
 
-    /**
-     * Extension function for removing given number of elements from start index, from array
-     * @param i index where to start deleting the values from the array
-     * @param valuesPerIndex how many values from the array are deleted per index
-     */
+
     fun FloatArray.delete(i: Int, valuesPerIndex: Int): FloatArray {
 
         // copy range [0, i)
@@ -120,23 +94,14 @@ object OpenGLStatic {
         return result
     }
 
-    /**
-     * Generate color for multiple shapes, by multiplying the color
-     * @param color color that will be copied
-     * @param numberElements number of elements that will have this color
-     */
+
     fun generateColors(color: Int, numberElements: Int): IntArray {
         return IntArray(numberElements) {
             color
         }
     }
 
-    /**
-     * Utility method for compiling a OpenGL shader.
-     * @param type vertex or fragment shader type.
-     * @param shaderCode string containing the shader code.
-     * @return returns an id for the shader.
-     */
+
     fun loadShader(type: Int, shaderCode: String): Int {
 
         // create a vertex shader type (GLES20.GL_VERTEX_SHADER)
@@ -149,16 +114,7 @@ object OpenGLStatic {
         return shader
     }
 
-    /**
-     * Utility method for debugging OpenGL calls. Provide the name of the call
-     * just after making it:
-     *
-     * mColorHandle = GLES20.glGetUniformLocation(mProgram, "vColor");
-     * MyGLRenderer.checkGlError("glGetUniformLocation");
-     *
-     * If the operation is not successful, the check throws an error.
-     * @param glOperation name of the OpenGL call to check.
-     */
+
     fun checkGlError(glOperation: String) {
         var error: Int
         while (GLES20.glGetError().also { error = it } != GLES20.GL_NO_ERROR) {
@@ -166,12 +122,7 @@ object OpenGLStatic {
         }
     }
 
-    /**
-     * Reads in text from a resource file and returns a String containing the
-     * text using input stream.
-     * @param context activity context
-     * @param resourceId resource id to the raw file
-     */
+
     fun readTextFileFromResource(context: Context, resourceId: Int): String {
         val body = StringBuilder()
         try {
@@ -193,11 +144,7 @@ object OpenGLStatic {
         return body.toString()
     }
 
-    /**
-     * Load OpenGL texture from drawable resources and return the handler
-     * @param context activity context
-     * @param resourceId resource id for the drawable file
-     */
+
     fun loadTexture(context: Context, resourceId: Int): Int {
 
         val textureHandle = IntArray(1)
@@ -236,11 +183,7 @@ object OpenGLStatic {
         return textureHandle[0]
     }
 
-    /**
-     * Load OpenGl texture from bitmap and return the handler
-     * @param bitmap bitmap that will be used as texture
-     * @param recycleBitmap whether to recycle the bitmaps after generating the texture handler
-     */
+
     fun loadTexture(bitmap: Bitmap, recycleBitmap: Boolean = true): Int {
 
         val textureHandle = IntArray(1)
@@ -273,11 +216,7 @@ object OpenGLStatic {
         return textureHandle[0]
     }
 
-    /**
-     * Generate a OpenGL program using the multiple vertex and fragment shader
-     * string generated from the raw *glsl files and return its index. Used for
-     * drawing multiple shapes with different color for each shape.
-     */
+
     fun setMultipleColorsProgram(): Int {
         val vertexShader: Int = loadShader(GLES20.GL_VERTEX_SHADER, vertexMultipleColorsShaderCode)
         val fragmentShader: Int = loadShader(GLES20.GL_FRAGMENT_SHADER, fragmentMultipleColorsShaderCode)
@@ -290,11 +229,7 @@ object OpenGLStatic {
         return program
     }
 
-    /**
-     * Generate a OpenGL program using the ordinary vertex and fragment shader
-     * string generated from the raw *glsl files and return its index. Used for
-     * drawing shapes with single color.
-     */
+
     fun setSingleColorsProgram(): Int {
         val vertexShader: Int = loadShader(GLES20.GL_VERTEX_SHADER, vertexShaderCode)
         val fragmentShader: Int = loadShader(GLES20.GL_FRAGMENT_SHADER, fragmentShaderCode)
@@ -307,11 +242,6 @@ object OpenGLStatic {
         return program
     }
 
-    /**
-     * Generate a OpenGL program using the texture vertex and fragment shader
-     * string generated from the raw *glsl files and return its index. Used
-     * in generating texture on to a shape.
-     */
     fun setTextureProgram(): Int {
         val vertexShader: Int = loadShader(GLES20.GL_VERTEX_SHADER, vertexTextureShaderCode)
         val fragmentShader: Int = loadShader(GLES20.GL_FRAGMENT_SHADER, fragmentTextureShaderCode)
@@ -327,12 +257,7 @@ object OpenGLStatic {
         return program
     }
 
-    /**
-     * Generate a resized bitmap from an exsting bitmap
-     * @param bitmap original bitmap tha will be scaled
-     * @param newWidth new width for the bitmap that will be created
-     * @param newHeight new height for the bitmap that will be created
-     */
+
     fun getResizedBitmap(bitmap: Bitmap, newWidth: Int, newHeight: Int, recycleBitmap: Boolean = false): Bitmap {
         val width = bitmap.width
         val height = bitmap.height
@@ -350,13 +275,7 @@ object OpenGLStatic {
     }
 
 
-    /**
-     * Scale a non-power of 2 bitmap to fit in bitmap with power of 2 size that means bitmap with
-     * any of the following sized: 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096.
-     * If bitmap is with non-power size or it is bigger than 4096, the texture is not shown.
-     * @param bitmap bitmap that will be scaled in a size of power of two
-     * @param backgroundColor background color behind the scaled bitmap
-     */
+
     fun scaleBitmapPowerOfTwo(bitmap: Bitmap, backgroundColor: Int = Color.TRANSPARENT): BitmapInfo {
 
         val width = bitmap.width
@@ -416,11 +335,7 @@ object OpenGLStatic {
         )
     }
 
-    /**
-     * Find the nearest size that is power of two: 2, 4, 8, 16, 32...
-     * @param size side size which will be used to determine the nearest
-     * size that is powwer of two
-     */
+
     fun findPowerOfTwoSize(size: Int): Int {
         var increase = 1
         while (true) {
@@ -432,16 +347,7 @@ object OpenGLStatic {
         }
     }
 
-    /**
-     * Generate a circle handle, this is a OpenGL texture handler which is generated by a
-     * bitmap, which on its own is generated from a canvas with given parameters as radius,
-     * stroke width and fill and stroke colors.
-     * @param radius circle radius
-     * @param strokeWidth stroke width for the circle
-     * @param fillColor fill color for the circle
-     * @param strokeColor stroke color for the circle
-     * @param backgroundColor background color behind the circle
-     */
+
     fun generateCircleHandle(radius: Float = 10f, strokeWidth: Float = 12f, fillColor: Int = Color.WHITE, strokeColor: Int = Color.BLACK, backgroundColor: Int = Color.TRANSPARENT): Int {
 
         val d = radius * 2 + strokeWidth
@@ -470,16 +376,7 @@ object OpenGLStatic {
         return loadTexture(bitmap)
     }
 
-    /**
-     * Generate circle for the deleting tool element, that has radial gradient
-     * used to show the are where all points inside will be deleted.
-     * @param radius circle radius
-     * @param colors colors for the radial gradient
-     * @param stops color stops for the radial gradient
-     * @param shadowColor color for the shadow
-     * @param shadowRadius radius for the shadow
-     * @param backgroundColor background color behind the circle
-     */
+
     fun generateCircleAreaHandle(
         radius: Float = 10f, colors: IntArray, stops: FloatArray,
         shadowColor: Int = Color.TRANSPARENT, shadowRadius: Float = 1f, backgroundColor: Int = Color.TRANSPARENT
@@ -511,13 +408,7 @@ object OpenGLStatic {
         return loadTexture(bitmap)
     }
 
-    /**
-     * Generate the transparent background. That can be used by the user to
-     * instantiate the difference between transparent area and are with color.
-     * @param firstColor first color for the transparent background
-     * @param secondColor second color for the rectangle of the transparent background
-     * @param rectWidth width of each rectangle, that will be drawn with the second color
-     */
+
     fun generateTransparentBackgroundHandle(firstColor: Int, secondColor: Int, rectWidth: Float): Int {
         val width = DEVICE_WIDTH.toInt()
         val height = DEVICE_HEIGHT.toInt()
@@ -550,12 +441,7 @@ object OpenGLStatic {
         return loadTexture(bitmap)
     }
 
-    /**
-     * Set all shader strings for shapes that use single color, for
-     * multiple shapes that use multiple colors ofr each shape separately and
-     * for shapes that sue texture.
-     * @param context activity context
-     */
+
     fun setShaderStrings(context: Context) {
         vertexShaderCode = readTextFileFromResource(context, R.raw.vertex_single_color_shader)
         fragmentShaderCode = readTextFileFromResource(context, R.raw.fragment_single_color_shader)
@@ -565,16 +451,7 @@ object OpenGLStatic {
         fragmentMultipleColorsShaderCode = readTextFileFromResource(context, R.raw.fragment_multiple_colors_shader)
     }
 
-    /**
-     * Distance from a point (x,y) to line segment connecting the
-     * two points (x1,y1) and (x2,y2)
-     * @param x x coordinate of the point
-     * @param y y coordinate of the point
-     * @param x1 x coordinate of first line point
-     * @param y1 y coordinate of first line point
-     * @param x2 x coordinate of second line point
-     * @param y2 y coordinate of second line point
-     */
+
     fun distancePointToLine(x: Float, y: Float, x1: Float, y1: Float, x2: Float, y2: Float): Float {
 
         val A = x - x1
@@ -610,21 +487,7 @@ object OpenGLStatic {
         return Math.sqrt(0.0 + dx * dx + dy * dy).toFloat()
     }
 
-    /**
-     * Bitmap info class, that includes information about the bitmap that is opened by the user,
-     * or received as cache when the user closes the app, to recreate the bitmap.
-     * @param bitmap bitmap with sides that are power of two
-     * @param bitmapPixelData pixel data of the scaled power of two bitmap, in which color are represented as integers
-     * @param bitmapByteBufferData byte buffer data from the bitmap, used to recreate the bitmap from cache
-     * @param bitmapWidthNoTransparent width of the scaled power of two bitmap, that does not include transparent area
-     * @param bitmapHeightNoTransparent height of the scaled power of two bitmap, that does not include transparent area
-     * @param bitmapWidth bitmap width of the scaled power of two bitmap, used for creating bitmap by pixel data
-     * @param bitmapHeight bitmap height of the scaled power of two bitmap, used for creating bitmap by pixel data
-     * @param lowerResolutionBitmapPixelData pixel data of the lower resolution bitmap from the scaled power of two bitmap
-     * @param lowerResolutionBitmapWidth bitmap width of the lower resolution bitmap
-     * @param lowerResolutionBitmapHeight bitmap height of the lower resolution bitmap
-     * @param imageHandle handle for the OpenGL image, that holds the texture
-     */
+
     class BitmapInfo(
         var bitmap: Bitmap? = null,
         var bitmapPixelData: IntArray = intArrayOf(),

@@ -26,26 +26,13 @@ import com.example.photoeditoropengl.motiongesture.OpenGLMatrixGestureDetector
 import com.example.photoeditoropengl.motiongesture.OpenGLStatic
 import com.example.photoeditoropengl.motiongesture.Shapes.Companion.STYLE_STROKE
 
-/**
- * Helper class that holds and has method for drawing all available shapes on the
- * OpenGL surface view
- */
 class OpenGLHelper : View.OnTouchListener {
-
-    // gesture detector used for applying transformations to all OpenGL objects: line, images, triangles..
-    var mainGestureDetector: OpenGLMatrixGestureDetector =
-        OpenGLMatrixGestureDetector()
+    var mainGestureDetector: OpenGLMatrixGestureDetector = OpenGLMatrixGestureDetector()
     lateinit var image: Image
     var requestRenderListener: () -> Unit = {}
     var style: Int = STYLE_STROKE
     var singleColorsProgram: Int = -1
 
-    /**
-     * Creates the initial shapes that are drawn, that includes image texture of a circle
-     * representing the points set by the user. The programs for the different OpenGL
-     * objects, and the object them selves. This method is called only from the OpenGL renderer
-     * since, programs and textures can be create only when the OpenGL context is available.
-     */
     fun createShapes(context: Context? = null) {
 
         // preload program in case a shape need to be created when the OpenGL context is not available 
@@ -71,11 +58,12 @@ class OpenGLHelper : View.OnTouchListener {
 
     }
 
-    override fun onTouch(v: View, event: MotionEvent): Boolean {
+    override fun onTouch(v: View?, event: MotionEvent): Boolean {
         mainGestureDetector.onTouchEvent(event)
         requestRenderListener.invoke()
         return true
     }
+
 
     fun onTouchEvent(event: MotionEvent) : Boolean{
         mainGestureDetector.onTouchEvent(event)
@@ -84,11 +72,6 @@ class OpenGLHelper : View.OnTouchListener {
         return true
     }
 
-    /**
-     * Method called when the shapes need to be redrawn, with the responsible OpenGL matrix values, that are applied by the
-     * user from his finger gestures.
-     * @param transformedMatrixOpenGL OpenGL matrix values, for transformation applied to all shapes
-     */
     fun draw(transformedMatrixOpenGL: FloatArray) {
         image.draw(transformedMatrixOpenGL)
     }

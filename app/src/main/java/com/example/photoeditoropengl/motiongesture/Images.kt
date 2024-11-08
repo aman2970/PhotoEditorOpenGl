@@ -1,19 +1,4 @@
-/*
-* Copyright (C) 2020 Stanislav Georgiev
-* https://github.com/slaviboy
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+
 package com.example.photoeditoropengl.motiongesture
 
 import android.graphics.PointF
@@ -28,20 +13,6 @@ import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.ShortBuffer
 
-/**
- * A 2D representation of multiple images, using OpenGL ES2.0.
- * @param bitmapWidth width of the bitmap in px
- * @param bitmapHeight height of the bitmap in px
- * @param positions array with positions for each rectangle in graphic coordinate system [x1,y1, x2,y2, x3,y3,...]
- * @param width rectangle width in graphic coordinate system
- * @param height rectangle height in graphic coordinate system
- * @param isVisible boolean indicating whether the images should be drawn
- * @param keepSize whether to keep image size when scale is made with the gesture detector
- * @param usePositionAsCenter use the images positions as center point for the image, and not as the Top-Left corner
- * @param gestureDetector gesture detect, with the transformation that will be applied when generating the coordinates for the images
- * @param textureHandle handle for the bitmap texture that will be used for the image
- * @param preloadProgram preloaded program in case we need to create a Images, when the OpenGL Context is not available
- */
 open class Images(
     var bitmapWidth: Float,
     var bitmapHeight: Float,
@@ -155,10 +126,6 @@ open class Images(
         updateBuffers()
     }
 
-    /**
-     * Encapsulates the OpenGL ES instructions for drawing this shape.
-     * @param mvpMatrix the Model View Project matrix in which to draw this shape.
-     */
     fun draw(mvpMatrix: FloatArray) {
 
         // draw images only if its property visible is set to true
@@ -212,9 +179,6 @@ open class Images(
         GLES20.glDisableVertexAttribArray(textureCoordinateHandle)
     }
 
-    /**
-     * Update all buffers: vertex, texture and draw order buffers, used when values are changed and need to be updated.
-     */
     fun updateBuffers() {
 
         // init buffer for vertices
@@ -239,10 +203,7 @@ open class Images(
         drawOrderBuffer.position(0)
     }
 
-    /**
-     * Generate array for the drawing order and texture coordinates for all vertices.
-     * @param numberOfImages the new current number of images
-     */
+
     fun generateDrawOrderAndTexture(numberOfImages: Int) {
 
         drawOrder = ShortArray(numberOfImages * 6)
@@ -253,10 +214,7 @@ open class Images(
         }
     }
 
-    /**
-     * Set drawing order and texture coordinates for a particular image given by the index i.
-     * @param i start index in all arrays (index of the image)
-     */
+
     fun setDrawOrderAndTexture(i: Int) {
         val v1 = i * 4
         val v2 = i * 4 + 1
@@ -282,12 +240,7 @@ open class Images(
         textureCoordinate[i * 8 + 7] = 0.0f
     }
 
-    /**
-     * Add new image elements with position given by x and y coordinate, in graphic coordinate system
-     * @param x x in graphic coordinate system
-     * @param y y in graphic coordinate system
-     * @param i start index in all arrays (index of the image)
-     */
+
     fun add(x: Float, y: Float, i: Int = positionsOpenGL.size / 2) {
 
         // generate position in OpenGL coordinate system
@@ -297,12 +250,7 @@ open class Images(
         addOpenGL(tempPointOpenGL.x, tempPointOpenGL.y, i)
     }
 
-    /**
-     * Add new image elements with position given by x and y coordinate, in OpenGL coordinate system.
-     * @param x x in OpenGL coordinate system
-     * @param y y in OpenGL coordinate system
-     * @param i start index in all arrays (index of the image)
-     */
+
     fun addOpenGL(x: Float, y: Float, i: Int) {
 
         val result = positionsOpenGL.toMutableList()
@@ -310,12 +258,7 @@ open class Images(
         setImagesPositionsOpenGL(result.toFloatArray())
     }
 
-    /**
-     * Move image position and update the array holding the image coordinates, using positions in graphic coordinate system
-     * @param x x in graphic coordinate system
-     * @param y y in graphic coordinate system
-     * @param i start index in all arrays (index of the image)
-     */
+
     fun move(x: Float, y: Float, i: Int) {
 
         // generate position in OpenGL coordinate system
@@ -325,22 +268,13 @@ open class Images(
         moveOpenGL(tempPointOpenGL.x, tempPointOpenGL.y, i)
     }
 
-    /**
-     * Move image position and update the array holding the image coordinates, using positions in OpenGL coordinate system
-     * @param x x in OpenGL coordinate system
-     * @param y y in OpenGL coordinate system
-     * @param i start index in all arrays (index of the image)
-     */
+
     fun moveOpenGL(x: Float, y: Float, i: Int) {
         positionsOpenGL[i * 2] = x
         positionsOpenGL[i * 2 + 1] = y
         updateImageCoordinate(i)
     }
 
-    /**
-     * Remove image element by given index i
-     * @param i index of the image
-     */
     fun delete(i: Int) {
 
         // remove elements from the array with positions
@@ -355,11 +289,6 @@ open class Images(
         updateBuffers()
     }
 
-    /**
-     * Set new images using array with the new position, that holds values for the x,y coordinate for each image. The values are presented
-     * as array [x1,y1, x2,y2, x3,y3, ...]
-     * @param newPositionsOpenGL the new position for each image
-     */
     fun setImagesPositionsOpenGL(newPositionsOpenGL: FloatArray) {
 
         positionsOpenGL = newPositionsOpenGL
@@ -374,9 +303,6 @@ open class Images(
         updateBuffers()
     }
 
-    /**
-     * Set the raw size, which is the size that is calculated in case width or height is set as WRAP_CONTENT, MATCH_DEVICE or AUTO_SIZE
-     */
     internal fun setRawSize() {
 
         actualWidth = when (width) {
@@ -394,11 +320,6 @@ open class Images(
         }
     }
 
-    /**
-     * Generate the OpenGL coordinates in range [-1,1] for the bound box of each image using the positions x and y, the width and
-     * height of the image.
-     * @param updateImagePositions if positions need to be updated otherwise it uses the previous calculated positions
-     */
     fun generateCoordinatesOpenGL(updateImagePositions: Boolean = true) {
 
         // get width and height in OpenGL coordinate system
@@ -423,12 +344,6 @@ open class Images(
         needUpdate = false
     }
 
-    /**
-     * Update the image coordinate for a particular image, in OpenGL coordinate
-     * system. The coordinates represent the bound box that holds the image, and
-     * it uses 4 points for each edge, with 2 coordinates x and y for each points.
-     * @param i index of the image item
-     */
     fun updateImageCoordinate(i: Int) {
 
         // image width, height and position x and y coordinates all in OpenGL coordinate system

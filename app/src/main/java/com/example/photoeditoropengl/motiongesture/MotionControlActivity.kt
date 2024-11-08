@@ -1,19 +1,13 @@
 package com.example.photoeditoropengl.motiongesture
 
-import android.content.Context
-import android.graphics.PixelFormat
-import android.opengl.GLSurfaceView
 import android.os.Bundle
-import android.os.SystemClock
 import android.util.Log
-import android.view.MotionEvent
-import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -43,26 +37,36 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.zIndex
 import com.example.photoeditoropengl.imageedit.BitmapRenderer
-import com.example.photoeditoropengl.motiongesture.OpenGLStatic.ENABLE_ALPHA
-import com.example.photoeditoropengl.motiongesture.OpenGLStatic.ENABLE_ANTIALIASING
 import com.example.photoeditoropengl.ui.theme.PhotoEditorOpenGlTheme
-import com.slaviboy.opengl.main.OpenGLConfigChooser
 import com.slaviboy.openglexamples.single.OpenGLHelper
-import com.slaviboy.openglexamples.single.OpenGLRenderer
-import kotlin.math.log
 import kotlin.math.roundToInt
 
-class MotionControlActivity : ComponentActivity() {
+class MotionControlActivity : ComponentActivity(),OpenGLMatrixGestureDetector.OnTransformationUpdateListener  {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        OpenGLMatrixGestureDetector(transformationListener = this)
+
         setContent {
             PhotoEditorOpenGlTheme {
                 TriangleScreenWithOverlay()
             }
         }
     }
+
+    override fun onTransformationUpdate(
+        scale: Float,
+        angle: Float,
+        translateX: Float,
+        translateY: Float
+    ) {
+        Log.d("TransformationUpdate>>>>>", "Scale: $scale, Angle: $angle, TranslateX: $translateX, TranslateY: $translateY")
+    }
 }
+
+
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -148,7 +152,7 @@ fun TransparentSquareBoxOne(openGLHelper: OpenGLHelper,surfaceView: OpenGLSurfac
     }
 }
 
-
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun TriangleScreenWithOverlay() {
     val context = LocalContext.current
@@ -156,9 +160,26 @@ fun TriangleScreenWithOverlay() {
     val isExporting = remember { mutableStateOf(false) }
     val openGLHelper = remember { OpenGLHelper() }
     val glSurfaceView = remember { OpenGLSurfaceView(context) }
+    var boxPosition by remember { mutableStateOf(Offset(50f, 50f)) }
+    var boxScale by remember { mutableStateOf(1.3f) }
+    var boxRotation by remember { mutableStateOf(0f) }
 
     bitmapRenderer.setScreenshotSavedListener {
         isExporting.value = false
+    }
+
+    LaunchedEffect(openGLHelper) {
+        openGLHelper.mainGestureDetector.listener = object : OpenGLMatrixGestureDetector.OnMatrixChangeListener {
+            override fun onMatrixChange(matrixGestureDetector: OpenGLMatrixGestureDetector) {
+                Log.d("data>>>>", "onMatrixChange: ")
+                val translation = matrixGestureDetector.translate
+                boxPosition = Offset(translation.x, translation.y)
+
+                boxScale = matrixGestureDetector.scale
+
+                boxRotation = matrixGestureDetector.angle
+            }
+        }
     }
 
     Scaffold { paddingValues ->
@@ -167,7 +188,6 @@ fun TriangleScreenWithOverlay() {
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Main content
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -177,12 +197,55 @@ fun TriangleScreenWithOverlay() {
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxSize()
+
                 ) {
 
 
                     OpenGLTriangleViews(openGLHelper, glSurfaceView)
 
-                 //    TransparentSquareBoxOne(openGLHelper, glSurfaceView)
+                    Box(
+                        modifier = Modifier
+                            .size(130.dp)
+                            .offset { IntOffset(boxPosition.x.roundToInt(), boxPosition.y.roundToInt()) }
+                            .graphicsLayer(
+                                scaleX = boxScale,
+                                scaleY = boxScale,
+                                rotationZ = boxRotation
+                            )
+                            .border(BorderStroke(.5.dp, Color.Black))
+
+                    ) {
+
+                            Box(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .offset(x = (-10).dp, y = (-10).dp)
+                                    .background(Color.Red)
+                                    .align(Alignment.TopStart)
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .offset(x = (10).dp, y = (-10).dp)
+                                    .background(Color.Green)
+                                    .align(Alignment.TopEnd)
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .offset(x = (-10).dp, y = (10).dp)
+                                    .background(Color.Blue)
+                                    .align(Alignment.BottomStart)
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .offset(x = (10).dp, y = (10).dp)
+                                    .background(Color.Yellow)
+                                    .align(Alignment.BottomEnd)
+                            )
+
+                    }
 
                 }
             }

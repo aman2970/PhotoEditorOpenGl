@@ -1,19 +1,4 @@
-/*
-* Copyright (C) 2020 Stanislav Georgiev
-* https://github.com/slaviboy
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+
 package com.example.photoeditoropengl.motiongesture
 
 import android.graphics.Color
@@ -26,18 +11,6 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 
-/**
- * A 2D representation of drawing multiple shapes: Lines, Rectangles, Triangles... using OpenGL 2.0
- * @param coordinates coordinates array holding all point coordinates in graphic coordinate system with 2 coordinates x and y for each vertex of each shape
- * @param colors array with integer representation of a color for each shape (1 integer value per shape)
- * @param strokeWidth stroke width for all the shapes, used for stroke shapes
- * @param isVisible if shape should be drawn, or not when the methods draw() is called
- * @param gestureDetector gesture detect, with the transformation that will be applied when generating the coordinates for the shapes
- * @param shapeType type for the shape: STYLE_FILL or STYLE_STROKE
- * @param numberOfVerticesPerShape number of vertices per shape, for example line has 2 vertices, fill triangle has 3 vertices...
- * @param preloadProgram preloaded program in case we need to create a Shape, when the OpenGL Context is not available
- * @param useSingleColor if single color will be set to all shapes, instead of passing array with colors for each shape separately
- */
 open class Shapes(
     coordinates: FloatArray = floatArrayOf(),
     colors: IntArray = intArrayOf(),
@@ -69,12 +42,7 @@ open class Shapes(
     internal var colorsOpenGL: FloatArray         // colors for each shapes, with 4 color channel values r,g,b,a for each vertex
     internal var coordinatesOpenGL: FloatArray    // coordinates for each shape, with 2 values x,y for each vertex and it is in OpenGL coordinate system
 
-    /**
-     * Set shapes colors as integer representation, then split those integer values to its 4 channels: r,g,b,a.
-     * The array contains one integer value per shape, and is used to converted it to OpenGL colors, that are store
-     * in the array 'colorsOpenGL' by setting the same 4 channel values foe each vertex of each shape.
-     * @param colors array with colors for each shape as integer representation
-     */
+
     var colors: IntArray = colors
         set(value) {
 
@@ -139,10 +107,6 @@ open class Shapes(
         updateBuffers()
     }
 
-    /**
-     * Method for drawing the shapes
-     * @param mvpMatrix the Model View Project matrix in which to draw the shapes
-     */
     open fun draw(mvpMatrix: FloatArray) {
 
         // draw shapes only if its property visible is set to true
@@ -202,9 +166,7 @@ open class Shapes(
         GLES20.glDisableVertexAttribArray(colorHandle)
     }
 
-    /**
-     * Update all buffers: coordinates and colors, used when values are changed and need to be updated.
-     */
+
     private fun updateBuffers() {
 
         // init buffer for vertices
@@ -223,14 +185,6 @@ open class Shapes(
     }
 
 
-    /**
-     * Get the actual coordinates since the varargs is holding info for the coordinates for example when
-     * shape is rectangle and is in format [x1,y1,width1,height1, x2,y2,width2,height2, ...], and the
-     * normalization of the width and height is NOT done properly since, they are not coordinates. And
-     * first they need to be converted in to actual coordinates for the shape.
-     * @param isCoordinatesInfo if the array coordinates contains not only coordinates for the shape, but also info like: width, height, radius..
-     * @param coordinates array holding the actual coordinates or for some shapes the coordinates + info for the coordinates
-     */
     fun getActualCoordinate(isCoordinatesInfo: Boolean, coordinates: FloatArray): FloatArray {
 
         return if (isCoordinatesInfo) {
@@ -242,12 +196,7 @@ open class Shapes(
         }
     }
 
-    /**
-     * Set single shape color in the array colorsOpenGL, that holds the color values for the each shape,
-     * the same r,g,b,a values are set for each vertex.
-     * @param color integer representation of the color for the shape
-     * @param i start index in all arrays (index of the shape)
-     */
+
     fun setColor(i: Int, color: Int) {
 
         // if single color is used for all shapes
@@ -277,10 +226,7 @@ open class Shapes(
         }
     }
 
-    /**
-     * Generate the coordinates for all shapes, this is each vertex has x and y coordinates. Those OpenGL coordinates
-     * are generated from the coordinates, that are used in the initialization and are in graphic coordinate system.
-     */
+
     internal fun generateCoordinatesOpenGL(coordinates: FloatArray = this.coordinates) {
 
         // get the OpenGL coordinate for each of the vertices
@@ -290,13 +236,7 @@ open class Shapes(
         needUpdate = false
     }
 
-    /**
-     * Add new shape element with position given by x and y coordinates, from the array with new coordinate in graphic coordinate system.
-     * @param i start index in all arrays (index of the shape)
-     * @param color integer representation of the color for the shape
-     * @param isCoordinatesInfo if the varargs newCoordinates is holding info about the coordinates and not the actual coordinate for the shape
-     * @param newCoordinates the coordinates for the new shape
-     */
+
     internal fun add(i: Int = coordinatesOpenGL.size / coordinatesPerShape, color: Int = Color.TRANSPARENT, isCoordinatesInfo: Boolean, vararg newCoordinates: Float) {
 
         // get actual coordinates
@@ -313,13 +253,7 @@ open class Shapes(
         add(i, color, true, *newCoordinates)
     }
 
-    /**
-     * Add new shape element with position given by x and y coordinates, from the array with new coordinate in OpenGL coordinate system.
-     * @param i start index in all arrays (index of the shape)
-     * @param color integer representation of the color for the shape
-     * @param isCoordinatesInfo if the varargs newCoordinatesOpenGL is holding info about the coordinates and not the actual coordinate for the shape
-     * @param newCoordinatesOpenGL the coordinates for the new shape
-     */
+
     internal fun addOpenGL(i: Int = coordinatesOpenGL.size / coordinatesPerShape, color: Int = Color.TRANSPARENT, isCoordinatesInfo: Boolean = true, vararg newCoordinatesOpenGL: Float) {
 
         // get actual coordinates
@@ -352,12 +286,7 @@ open class Shapes(
         addOpenGL(i, color, true, *newCoordinatesOpenGL)
     }
 
-    /**
-     * Change shape element with position given by x and y coordinates, from array with coordinates in graphic coordinate system.
-     * @param i start index in all arrays (index of the shape)
-     * @param isCoordinatesInfo if the varargs newCoordinatesOpenGL is holding info about the coordinates and not the actual coordinate for the shape
-     * @param newCoordinates the new position of the shape with array holding the new coordinates as multiple arguments
-     */
+
     internal fun change(i: Int = coordinatesOpenGL.size / coordinatesPerShape, isCoordinatesInfo: Boolean = true, vararg newCoordinates: Float) {
 
         // get actual coordinates for the triangles/lines
@@ -374,12 +303,7 @@ open class Shapes(
         change(i, true, *newCoordinates)
     }
 
-    /**
-     * Change shape element with position given by x and y coordinates, from array with coordinates in OpenGL coordinate system.
-     * @param i start index in all arrays (index of the shape)
-     * @param isCoordinatesInfo if the varargs newCoordinatesOpenGL is holding info about the coordinates such as {width, height, radius...} and not the actual coordinate for the shape
-     * @param newCoordinatesOpenGL the new position of the shape with array holding the new coordinates as multiple arguments
-     */
+
     internal fun changeOpenGL(i: Int, isCoordinatesInfo: Boolean = true, vararg newCoordinatesOpenGL: Float) {
 
         // get actual coordinates
@@ -396,10 +320,7 @@ open class Shapes(
         changeOpenGL(i, true, *newCoordinatesOpenGL)
     }
 
-    /**
-     * Remove shape element by given index i
-     * @param i start index in all arrays (index of the shape)
-     */
+
     open fun delete(i: Int) {
 
         // remove element used by the buffers and update them
@@ -410,13 +331,7 @@ open class Shapes(
         updateBuffers()
     }
 
-    /**
-     * Set the shapes using coordinates that are in graphic coordinate system, including and array with all color
-     * for each shape as integer representation (1 integer value per shape).
-     * @param newCoordinates shapes coordinate in graphic coordinate system (2 values x,y per vertex)
-     * @param newColors integer representation of color for each shape (1 value per shape)
-     * @param isCoordinatesInfo if the array with coordinate is holding info about the shape such as {width, height, radius...} and not the actual coordinate for the shape
-     */
+
     fun setShape(newCoordinates: FloatArray, newColors: IntArray, isCoordinatesInfo: Boolean = true) {
 
         // get actual coordinates
@@ -426,13 +341,7 @@ open class Shapes(
         setShapeOpenGL(coordinatesOpenGL, newColors, false)
     }
 
-    /**
-     * Set the shapes using coordinates that are in OpenGl coordinate system, including and array with all color
-     * for each shape as integer representation (1 integer value per shape).
-     * @param newCoordinatesOpenGL shapes coordinate in OpenGL coordinate system (2 values x,y per vertex)
-     * @param newColors integer representation of color for each shape (1 value per shape)
-     * @param isCoordinatesInfo if the array with coordinate is holding info about the shape such as {width, height, radius...} and not the actual coordinate for the shape
-     */
+
     fun setShapeOpenGL(newCoordinatesOpenGL: FloatArray, newColors: IntArray, isCoordinatesInfo: Boolean = true) {
 
         // get actual coordinates
@@ -444,13 +353,7 @@ open class Shapes(
         updateBuffers()
     }
 
-    /**
-     * Set the shapes using coordinates that are in graphic coordinate system, and single integer value
-     * representing the color for all shape.
-     * @param newCoordinates shapes coordinate in graphic coordinate system (2 values x,y per vertex)
-     * @param newColor integer representation of color for all shapes
-     * @param isCoordinatesInfo if the array with coordinate is holding info about the shape such as {width, height, radius...} and not the actual coordinate for the shape
-     */
+
     fun setShape(newCoordinates: FloatArray, newColor: Int, isCoordinatesInfo: Boolean = true) {
 
         // get actual coordinates
@@ -460,13 +363,7 @@ open class Shapes(
         setShapeOpenGL(coordinatesOpenGL, newColor, false)
     }
 
-    /**
-     * Set the shapes using coordinates that are in OpenGL coordinate system, and single integer value
-     * representing the color for all shape.
-     * @param newCoordinatesOpenGL shapes coordinate in OpenGL coordinate system (2 values x,y per vertex)
-     * @param newColor integer representation of color for all shapes
-     * @param isCoordinatesInfo if the array with coordinate is holding info about the shape such as {width, height, radius...} and not the actual coordinate for the shape
-     */
+
     fun setShapeOpenGL(newCoordinatesOpenGL: FloatArray, newColor: Int, isCoordinatesInfo: Boolean = true) {
 
         // get actual coordinates
@@ -505,13 +402,7 @@ open class Shapes(
             }
         }
 
-        /**
-         * Method that return the actual coordinates that are generated from the input coordinates for particular rectangle. If the style
-         * is set to STYLE_STROKE then lines are drawn and each rectangle has 4 lines. If style is set to STYLE_FILL then rectangles are
-         * drawn and each rectangle is made out of 2 triangles.
-         * @param style style for the shape fill or stroke
-         * @param coordinates array with input coordinates for the shape
-         */
+
         fun getRectanglesCoordinatesByStyle(style: Int, coordinates: FloatArray): FloatArray {
             return when (style) {
                 STYLE_FILL -> {
@@ -598,13 +489,7 @@ open class Shapes(
             }
         }
 
-        /**
-         * Method that get the number of vertices per rectangle depending on the style. If style STYLE_FILL is used
-         * there are only 6 vertices from the two triangles. If the style is STYLE_STROKE, 4 lines are used to create
-         * the rectangle, and each line has 2 vertices, that gives total of 8 vertices for the rectangle. If the style
-         * is STYLE_FILL, then 2 triangles are draw per rectangle.
-         * @param style style for the shape fill or stroke
-         */
+
         fun getRectanglesNumberOfVerticesFromStyle(style: Int): Int {
             return when (style) {
                 STYLE_FILL -> {
@@ -618,13 +503,7 @@ open class Shapes(
             }
         }
 
-        /**
-         * Method that return the actual coordinates that are generated from the input coordinates for particular triangle. If the style
-         * is set to STYLE_STROKE for that particular shape, then the coordinates for the 3 lines that make up the triangles are returned.
-         * If the style is set to STYLE_FILL then the coordinate of the triangle vertices are returned which is the input array.
-         * @param style style for the shape fill or stroke
-         * @param coordinates array with input coordinates for the shape
-         */
+
         fun getTrianglesCoordinatesByStyle(style: Int, coordinates: FloatArray): FloatArray {
 
             return when (style) {
@@ -672,12 +551,7 @@ open class Shapes(
             }
         }
 
-        /**
-         * Method that get the number of vertices per triangle depending on the style. If style STYLE_FILL is
-         * used there are only 3 vertices per triangle. If the style is STYLE_STROKE, 3 lines are used to create
-         * the triangle, each line has 2 vertices, that gives total of 6 vertices for lines of the triangle.
-         * @param style style for the shape fill or stroke
-         */
+
         fun getTrianglesNumberOfVerticesFromStyle(style: Int): Int {
             return when (style) {
                 STYLE_FILL -> {
@@ -691,15 +565,7 @@ open class Shapes(
             }
         }
 
-        /**
-         * Method that return the actual coordinates that are generated from the input coordinates for particular polygon. If the style
-         * is set to STYLE_STROKE then lines are drawn to form the stroke of the polygons. If style is set to STYLE_FILL then triangles
-         * are drawn to form the fill polygon.
-         * @param style style for the shape fill or stroke
-         * @param coordinates array with input coordinates for the polygon
-         * @param numberOfSegments the number of segments for the polygon for example triangle: 3, rectangle:4, pentagon:5,...
-         * @param innerDepth inner depth in range between [0,1] determine the star like shapes
-         */
+
         fun getRegularPolygonsCoordinatesByStyle(style: Int, coordinates: FloatArray, numberOfSegments: Int, innerDepth: Float): FloatArray {
 
             // if inner depth is set create a star object
@@ -792,15 +658,7 @@ open class Shapes(
             return newCoordinates
         }
 
-        /**
-         * Method that return the actual coordinates that are generated from the input coordinates for particular polygon. If the style
-         * is set to STYLE_STROKE then lines are drawn to form the stroke of the polygons. If style is set to STYLE_FILL then triangles
-         * are drawn to form the fill polygon.
-         * @param style style for the shape fill or stroke
-         * @param coordinates array with input coordinates for the polygon
-         * @param numberOfSegments the number of segments for the polygon for example triangle: 3, rectangle:4, pentagon:5,...
-         * @param innerDepth inner depth in range between [0,1] determine the star like shapes
-         */
+
         fun getStarCoordinatesByStyle(style: Int, coordinates: FloatArray, numberOfSegments: Int, innerDepth: Float): FloatArray {
 
             // how many coordinates are needed when drawing the
@@ -870,10 +728,7 @@ open class Shapes(
             return newCoordinates
         }
 
-        /**
-         * Add the line or triangle coordinates at particular index for the regular polygon, when the
-         * innerDepth is bigger that 0, and a star like shape is created.
-         */
+
         fun addStarCoordinates(
             i: Int, newCoordinates: FloatArray, innerDepth: Float, previousX: Float, previousY: Float,
             resultX: Float, resultY: Float, cX: Float, cY: Float, coordinatesPerSegment: Int
@@ -921,14 +776,7 @@ open class Shapes(
             }
         }
 
-        /**
-         * Method that get the number of vertices per regular polygon depending on the style. If style STYLE_FILL is used
-         * there (numberOfVertices * 3) vertices from the triangles that make up the polygon. If the style is STYLE_STROKE,
-         * then there are (numberOfVertices * 2) vertices from the lines that make up the polygon.
-         * @param style style for the shape fill or stroke
-         * @param numberOfVertices the number of vertices for the polygon for example triangle: 3, rectangle:4, pentagon:5,...
-         * @param innerDepth inner depth in range between [0,1] determine the star like shapes
-         */
+
         fun getRegularPolygonsNumberOfVerticesFromStyle(style: Int, numberOfVertices: Int, innerDepth: Float): Int {
 
             // if the number of elements should double, since star like shapes will be created
@@ -946,14 +794,7 @@ open class Shapes(
             }
         }
 
-        /**
-         * Method that return the actual coordinates that are generated from the input coordinates for particular ellipse. If the style
-         * is set to STYLE_STROKE then lines are drawn to form the stroke of the ellipse. If style is set to STYLE_FILL then triangles
-         * are drawn to form the fill ellipse.
-         * @param style style for the shape fill or stroke
-         * @param coordinates array with input coordinates for the ellipse
-         * @param numberOfSegments the number of segments for the ellipse for example triangle: 3, rectangle:4, pentagon:5,...
-         */
+
         fun getEllipsesCoordinatesByStyle(style: Int, coordinates: FloatArray, numberOfSegments: Int): FloatArray {
 
             // how many coordinates are needed when drawing the
@@ -1057,14 +898,7 @@ open class Shapes(
             addAll(0, elements)
         }
 
-        /**
-         * Method that generates smooth lines by using cardinal splines (aka canonical spline), to create
-         * smooth curves that goes through the points given as FloatArray that holds the coordinates.
-         * @param coordinates array with coordinates for the point through which the curve passes
-         * @param isClosed if the path is close and first and last points should be connected
-         * @param tension tension for the curve
-         * @param numOfSegments the number of segments between each two points
-         */
+
         fun getPassByCurveCoordinates(coordinates: FloatArray, isClosed: Boolean = false, tension: Float = 0.5f, numOfSegments: Int = 16): FloatArray {
 
             val coordinatesCopy = coordinates.toMutableList()  // clone array
@@ -1115,10 +949,6 @@ open class Shapes(
             return newCoordinates.toFloatArray()
         }
 
-        /**
-         * Get the OpenGL type that will be draw using the coordinate from the style.
-         * @param style style for the shape fill or stroke
-         */
         fun getIrregularPolygonTypeByStyle(style: Int): Int {
 
             return when (style) {
@@ -1133,10 +963,7 @@ open class Shapes(
             }
         }
 
-        /**
-         * Method that get the number of vertices per irregular polygon deepening on the style
-         * @param style style for the shape fill or stroke
-         */
+
         fun getIrregularPolygonNumberOfVerticesFromStyle(style: Int): Int {
             return when (style) {
                 STYLE_FILL -> 3 // each triangle has 3 vertices

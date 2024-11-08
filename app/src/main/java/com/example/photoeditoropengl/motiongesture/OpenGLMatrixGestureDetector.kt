@@ -1,19 +1,4 @@
-/*
-* Copyright (C) 2020 Stanislav Georgiev
-* https://github.com/slaviboy
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+
 package com.example.photoeditoropengl.motiongesture
 
 import android.graphics.Matrix
@@ -25,28 +10,35 @@ import com.example.photoeditoropengl.motiongesture.OpenGLStatic.DEVICE_WIDTH
 import com.example.photoeditoropengl.motiongesture.OpenGLStatic.NEAR
 import com.example.photoeditoropengl.motiongesture.OpenGLStatic.RATIO
 
-class OpenGLMatrixGestureDetector(var matrix: Matrix = Matrix(), listener: OnMatrixChangeListener? = null) {
+class OpenGLMatrixGestureDetector(var matrix: Matrix = Matrix(), listener: OnMatrixChangeListener? = null,transformationListener: OnTransformationUpdateListener? = null) {
 
-    internal var pointerIndex: Int                   // pointer for the index
-    internal val tempMatrix: Matrix                  // temp matrix used in poly to poly method
-    internal val source: FloatArray                  // initial coordinates from finger down event for each finger in following order [x1,y1, x2,y2, ...]
-    internal val distance: FloatArray                // new coordinates from finger move event for each finger in following order [x1,y1, x2,y2, ...]
-    internal var count: Int                          // count how many finger are on the screen
+    internal var pointerIndex: Int
+    internal val tempMatrix: Matrix
+    internal val source: FloatArray
+    internal val distance: FloatArray
+    internal var count: Int
 
-    internal val convertMatrix: Matrix               // matrix used in the conversion, that way no new matrix is created for each call
-    internal val convertMatrixInvert: Matrix         // invert matrix of the convert matrix, that way no new matrix is created for each call
+    internal val convertMatrix: Matrix
+    internal val convertMatrixInvert: Matrix
 
-    lateinit var listener: OnMatrixChangeListener    // listener called when matrix is updated
+    lateinit var listener: OnMatrixChangeListener
+    lateinit var transformationListener: OnTransformationUpdateListener
 
-    var scale: Float                                 // current scale factor used same for x and y directions
-    var angle: Float                                 // current rotational angle in degrees
-    var translate: PointF                            // current translate values for x and y directions
+    var scale: Float
+    var angle: Float
+    var translate: PointF
 
     init {
 
         if (listener != null) {
             this.listener = listener
         }
+
+        if (transformationListener != null) {
+            this.transformationListener = transformationListener
+        }
+
+        this.
 
         pointerIndex = 0
         tempMatrix = Matrix()
@@ -62,6 +54,11 @@ class OpenGLMatrixGestureDetector(var matrix: Matrix = Matrix(), listener: OnMat
         setTransformations()
     }
 
+    interface OnTransformationUpdateListener {
+        fun onTransformationUpdate(scale: Float, angle: Float, translateX: Float, translateY: Float)
+    }
+
+
     fun onTouchEvent(event: MotionEvent) {
         Log.d("data>>>>", "touch_event_called")
 
@@ -76,7 +73,6 @@ class OpenGLMatrixGestureDetector(var matrix: Matrix = Matrix(), listener: OnMat
 
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
 
-                // get the coordinates for the particular finger
                 val idx = index * 2
                 source[idx] = event.getX(index)
                 source[idx + 1] = event.getY(index)
@@ -94,12 +90,10 @@ class OpenGLMatrixGestureDetector(var matrix: Matrix = Matrix(), listener: OnMat
                     i++
                 }
 
-                // use poly to poly to detect transformations
                 tempMatrix.setPolyToPoly(source, pointerIndex, distance, pointerIndex, count)
                 matrix.postConcat(tempMatrix)
                 System.arraycopy(distance, 0, source, 0, distance.size)
 
-                // trigger the callback
                 if (::listener.isInitialized) {
                     listener.onMatrixChange(this)
                 }
@@ -111,7 +105,6 @@ class OpenGLMatrixGestureDetector(var matrix: Matrix = Matrix(), listener: OnMat
             }
         }
 
-        // set the transformations after matrix update
         setTransformations()
     }
 
@@ -139,6 +132,11 @@ class OpenGLMatrixGestureDetector(var matrix: Matrix = Matrix(), listener: OnMat
         angle = -(Math.atan2(skewX.toDouble(), scaleX.toDouble()) * (180 / Math.PI)).toFloat()
         if (angle == -0f) {
             angle = -angle
+        }
+
+
+        if(::transformationListener.isInitialized){
+            transformationListener.onTransformationUpdate(scale, angle, translateX, translateY)
         }
     }
 
