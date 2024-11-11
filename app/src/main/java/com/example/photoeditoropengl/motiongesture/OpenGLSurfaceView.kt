@@ -2,13 +2,19 @@ package  com.example.photoeditoropengl.motiongesture
 
 import android.content.Context
 import android.graphics.PixelFormat
+import android.opengl.EGLConfig
 import android.opengl.GLSurfaceView
 import android.util.AttributeSet
+import android.view.MotionEvent
+import android.view.View
+import com.example.photoeditoropengl.R
 import com.example.photoeditoropengl.motiongesture.OpenGLStatic.ENABLE_ALPHA
 import com.example.photoeditoropengl.motiongesture.OpenGLStatic.ENABLE_ANTIALIASING
+import com.example.photoeditoropengl.motiongesture.Shapes.Companion.STYLE_STROKE
 import com.slaviboy.opengl.main.OpenGLConfigChooser
 import com.slaviboy.openglexamples.single.OpenGLHelper
 import com.slaviboy.openglexamples.single.OpenGLRenderer
+import javax.microedition.khronos.opengles.GL10
 
 class OpenGLSurfaceView : GLSurfaceView {
 
@@ -33,7 +39,7 @@ class OpenGLSurfaceView : GLSurfaceView {
         }
 
         openGLHelper = OpenGLHelper()
-        this.setOnTouchListener(openGLHelper)
+      //  this.setOnTouchListener(openGLHelper)
 
         openGLRenderer = OpenGLRenderer(context, openGLHelper) {
             requestRender()
@@ -43,3 +49,5 @@ class OpenGLSurfaceView : GLSurfaceView {
         renderMode = RENDERMODE_WHEN_DIRTY
     }
 }
+
+

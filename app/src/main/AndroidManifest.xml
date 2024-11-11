@@ -29,6 +29,11 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+            android:name=".gesturecontrol.GestureControlActivity"
+            android:exported="false"
+            android:label="@string/title_activity_gesture_control"
+            android:theme="@style/Theme.PhotoEditorOpenGl" />
+        <activity
             android:name=".motiongesture.MotionControlActivity"
             android:exported="false"
             android:label="@string/title_activity_motion_control"

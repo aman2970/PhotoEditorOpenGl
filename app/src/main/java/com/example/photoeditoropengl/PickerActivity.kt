@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.photoeditoropengl.imageedit.MainActivity
+import com.example.photoeditoropengl.gesturecontrol.GestureControlActivity
 import com.example.photoeditoropengl.ui.theme.PhotoEditorOpenGlTheme
 import com.example.photoeditoropengl.videeoedit.VideoEditActivity
 
@@ -107,6 +108,13 @@ fun VideoPicker(onPickVideo:() -> Unit){
                     context.startActivity(intent)},
             ) {
                 Text("Motion\nControl")
+            }
+
+            Button(
+                onClick = {   val intent = Intent(context, GestureControlActivity::class.java)
+                    context.startActivity(intent)},
+            ) {
+                Text("Gest\nControl")
             }
 
         }

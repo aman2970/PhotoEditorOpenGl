@@ -1,5 +1,4 @@
 package com.example.photoeditoropengl.motiongesture
-
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -7,7 +6,6 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,7 +17,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,23 +28,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.compose.ui.zIndex
 import com.example.photoeditoropengl.imageedit.BitmapRenderer
+import com.example.photoeditoropengl.motiongesture.OpenGLStatic.DEVICE_HEIGHT
+import com.example.photoeditoropengl.motiongesture.OpenGLStatic.DEVICE_WIDTH
 import com.example.photoeditoropengl.ui.theme.PhotoEditorOpenGlTheme
 import com.slaviboy.openglexamples.single.OpenGLHelper
 import kotlin.math.roundToInt
 
-class MotionControlActivity : ComponentActivity(),OpenGLMatrixGestureDetector.OnTransformationUpdateListener  {
-
+class MotionControlActivity : ComponentActivity(){
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        OpenGLMatrixGestureDetector(transformationListener = this)
 
         setContent {
             PhotoEditorOpenGlTheme {
@@ -55,38 +50,24 @@ class MotionControlActivity : ComponentActivity(),OpenGLMatrixGestureDetector.On
             }
         }
     }
-
-    override fun onTransformationUpdate(
-        scale: Float,
-        angle: Float,
-        translateX: Float,
-        translateY: Float
-    ) {
-        Log.d("TransformationUpdate>>>>>", "Scale: $scale, Angle: $angle, TranslateX: $translateX, TranslateY: $translateY")
-    }
 }
-
-
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun TransparentSquareBoxOne(openGLHelper: OpenGLHelper,surfaceView: OpenGLSurfaceView) {
-    Log.d("data>>>>", "second_view_created")
-
     val context = LocalContext.current
     var boxPosition by remember { mutableStateOf(Offset(0f, 0f)) }
     var boxScale by remember { mutableStateOf(1f) }
     var boxRotation by remember { mutableStateOf(0f) }
 
     LaunchedEffect(openGLHelper) {
-        openGLHelper.mainGestureDetector.listener = object : OpenGLMatrixGestureDetector.OnMatrixChangeListener {
+        surfaceView.openGLHelper.mainGestureDetector.listener = object : OpenGLMatrixGestureDetector.OnMatrixChangeListener {
             override fun onMatrixChange(matrixGestureDetector: OpenGLMatrixGestureDetector) {
-                Log.d("data>>>>", "onMatrixChange: ")
                 val translation = matrixGestureDetector.translate
-                boxPosition = Offset(translation.x, translation.y)
-
+                val centerX = DEVICE_WIDTH / 2f
+                val centerY = DEVICE_HEIGHT / 2f
+                boxPosition = Offset(translation.x-centerX, translation.y-centerY)
                 boxScale = matrixGestureDetector.scale
-
                 boxRotation = matrixGestureDetector.angle
             }
         }
@@ -100,16 +81,12 @@ fun TransparentSquareBoxOne(openGLHelper: OpenGLHelper,surfaceView: OpenGLSurfac
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInteropFilter { event ->
-                    openGLHelper.onTouchEvent(event)
-                    true
-                }
             ,
             contentAlignment = Alignment.Center
         ) {
             Box(
                 modifier = Modifier
-                    .size(130.dp)
+                    .size(110.dp)
                     .offset { IntOffset(boxPosition.x.roundToInt(), boxPosition.y.roundToInt()) }
                     .graphicsLayer(
                         scaleX = boxScale,
@@ -160,26 +137,9 @@ fun TriangleScreenWithOverlay() {
     val isExporting = remember { mutableStateOf(false) }
     val openGLHelper = remember { OpenGLHelper() }
     val glSurfaceView = remember { OpenGLSurfaceView(context) }
-    var boxPosition by remember { mutableStateOf(Offset(50f, 50f)) }
-    var boxScale by remember { mutableStateOf(1.3f) }
-    var boxRotation by remember { mutableStateOf(0f) }
 
     bitmapRenderer.setScreenshotSavedListener {
         isExporting.value = false
-    }
-
-    LaunchedEffect(openGLHelper) {
-        openGLHelper.mainGestureDetector.listener = object : OpenGLMatrixGestureDetector.OnMatrixChangeListener {
-            override fun onMatrixChange(matrixGestureDetector: OpenGLMatrixGestureDetector) {
-                Log.d("data>>>>", "onMatrixChange: ")
-                val translation = matrixGestureDetector.translate
-                boxPosition = Offset(translation.x, translation.y)
-
-                boxScale = matrixGestureDetector.scale
-
-                boxRotation = matrixGestureDetector.angle
-            }
-        }
     }
 
     Scaffold { paddingValues ->
@@ -187,6 +147,10 @@ fun TriangleScreenWithOverlay() {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .pointerInteropFilter { event ->
+                    glSurfaceView.openGLHelper.onTouchEvent(event)
+                    true
+                }
         ) {
             Column(
                 modifier = Modifier
@@ -197,78 +161,19 @@ fun TriangleScreenWithOverlay() {
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxSize()
-
                 ) {
-
-
                     OpenGLTriangleViews(openGLHelper, glSurfaceView)
 
-                    Box(
-                        modifier = Modifier
-                            .size(130.dp)
-                            .offset { IntOffset(boxPosition.x.roundToInt(), boxPosition.y.roundToInt()) }
-                            .graphicsLayer(
-                                scaleX = boxScale,
-                                scaleY = boxScale,
-                                rotationZ = boxRotation
-                            )
-                            .border(BorderStroke(.5.dp, Color.Black))
-
-                    ) {
-
-                            Box(
-                                modifier = Modifier
-                                    .size(20.dp)
-                                    .offset(x = (-10).dp, y = (-10).dp)
-                                    .background(Color.Red)
-                                    .align(Alignment.TopStart)
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .size(20.dp)
-                                    .offset(x = (10).dp, y = (-10).dp)
-                                    .background(Color.Green)
-                                    .align(Alignment.TopEnd)
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .size(20.dp)
-                                    .offset(x = (-10).dp, y = (10).dp)
-                                    .background(Color.Blue)
-                                    .align(Alignment.BottomStart)
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .size(20.dp)
-                                    .offset(x = (10).dp, y = (10).dp)
-                                    .background(Color.Yellow)
-                                    .align(Alignment.BottomEnd)
-                            )
-
-                    }
-
+                    TransparentSquareBoxOne(openGLHelper,glSurfaceView)
                 }
             }
 
-            Button(
-                onClick = {
-
-                },
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(16.dp)
-            ) {
-                Text("Move")
-            }
         }
     }
 }
 
 @Composable
 fun OpenGLTriangleViews(openGLHelper: OpenGLHelper, glSurfaceView: OpenGLSurfaceView) {
-    // Set up the render listener only once
-    Log.d("data>>>>", "view_created")
-
     AndroidView(
         factory = { glSurfaceView },
         modifier = Modifier

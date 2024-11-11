@@ -10,7 +10,7 @@ import com.example.photoeditoropengl.motiongesture.OpenGLStatic.DEVICE_WIDTH
 import com.example.photoeditoropengl.motiongesture.OpenGLStatic.NEAR
 import com.example.photoeditoropengl.motiongesture.OpenGLStatic.RATIO
 
-class OpenGLMatrixGestureDetector(var matrix: Matrix = Matrix(), listener: OnMatrixChangeListener? = null,transformationListener: OnTransformationUpdateListener? = null) {
+class OpenGLMatrixGestureDetector(var matrix: Matrix = Matrix(), listener: OnMatrixChangeListener? = null) {
 
     internal var pointerIndex: Int
     internal val tempMatrix: Matrix
@@ -22,8 +22,6 @@ class OpenGLMatrixGestureDetector(var matrix: Matrix = Matrix(), listener: OnMat
     internal val convertMatrixInvert: Matrix
 
     lateinit var listener: OnMatrixChangeListener
-    lateinit var transformationListener: OnTransformationUpdateListener
-
     var scale: Float
     var angle: Float
     var translate: PointF
@@ -33,12 +31,6 @@ class OpenGLMatrixGestureDetector(var matrix: Matrix = Matrix(), listener: OnMat
         if (listener != null) {
             this.listener = listener
         }
-
-        if (transformationListener != null) {
-            this.transformationListener = transformationListener
-        }
-
-        this.
 
         pointerIndex = 0
         tempMatrix = Matrix()
@@ -54,15 +46,7 @@ class OpenGLMatrixGestureDetector(var matrix: Matrix = Matrix(), listener: OnMat
         setTransformations()
     }
 
-    interface OnTransformationUpdateListener {
-        fun onTransformationUpdate(scale: Float, angle: Float, translateX: Float, translateY: Float)
-    }
-
-
     fun onTouchEvent(event: MotionEvent) {
-        Log.d("data>>>>", "touch_event_called")
-
-        // only two fingers
         if (event.pointerCount > 2) {
             return
         }
@@ -109,9 +93,6 @@ class OpenGLMatrixGestureDetector(var matrix: Matrix = Matrix(), listener: OnMat
     }
 
     fun setTransformations() {
-        Log.d("data>>>>", "transformation_called")
-
-
         val points = FloatArray(9)
         matrix.getValues(points)
 
@@ -134,10 +115,6 @@ class OpenGLMatrixGestureDetector(var matrix: Matrix = Matrix(), listener: OnMat
             angle = -angle
         }
 
-
-        if(::transformationListener.isInitialized){
-            transformationListener.onTransformationUpdate(scale, angle, translateX, translateY)
-        }
     }
 
     fun transform(sourceMatrix: FloatArray, destinationMatrix: FloatArray) {
@@ -146,25 +123,20 @@ class OpenGLMatrixGestureDetector(var matrix: Matrix = Matrix(), listener: OnMat
 
     fun normalizeCoordinate(x: Float, y: Float, pointOpenGL: PointF = PointF()): PointF {
 
-        // get graphics matrix values
         val v = FloatArray(9)
         matrix.getValues(v)
 
-        // get translate value for the OpenGL coordinate system
         v[2] = normalizeTranslateX(v[2])
         v[5] = normalizeTranslateY(v[5])
 
-        // get the invert matrix
         convertMatrix.setValues(v)
         convertMatrix.invert(convertMatrixInvert)
 
-        // map coordinate using the invert matrix
         val xOpenGL = normalizeTranslateX(x)
         val yOpenGL = normalizeTranslateY(y)
         val coords = floatArrayOf(xOpenGL, yOpenGL)
         convertMatrixInvert.mapPoints(coords)
 
-        // set the result point with the new coordinates
         pointOpenGL.x = coords[0]
         pointOpenGL.y = coords[1]
 
@@ -172,16 +144,12 @@ class OpenGLMatrixGestureDetector(var matrix: Matrix = Matrix(), listener: OnMat
     }
 
     fun normalizeCoordinates(coordinates: FloatArray, coordinatesOpenGL: FloatArray = coordinates): FloatArray {
-
-        // get graphics matrix values
         val v = FloatArray(9)
         matrix.getValues(v)
 
-        // get translate value for the OpenGL coordinate system
         v[2] = normalizeTranslateX(v[2])
         v[5] = normalizeTranslateY(v[5])
 
-        // get the invert matrix
         convertMatrix.setValues(v)
         convertMatrix.invert(convertMatrixInvert)
 
@@ -190,7 +158,6 @@ class OpenGLMatrixGestureDetector(var matrix: Matrix = Matrix(), listener: OnMat
             val x = coordinates[i * 2]
             val y = coordinates[i * 2 + 1]
 
-            // map coordinate using the invert matrix
             val xOpenGL = normalizeTranslateX(x)
             val yOpenGL = normalizeTranslateY(y)
 
@@ -255,15 +222,12 @@ class OpenGLMatrixGestureDetector(var matrix: Matrix = Matrix(), listener: OnMat
 
         fun transform(sourceMatrix: FloatArray, destinationMatrix: FloatArray, matrix: Matrix) {
 
-            // get graphics matrix values
             val v = FloatArray(9)
             matrix.getValues(v)
 
-            // get translate value for the OpenGL coordinate system
             v[2] = normalizeTranslateX(v[2])
             v[5] = normalizeTranslateY(v[5])
 
-            // set rotation, scaling and translation from graphics matrix to form new 4x4 OpenGL matrix
             val openGLMatrix = floatArrayOf(
                 v[0], v[3], 0f, 0f,
                 v[1], v[4], 0f, 0f,
@@ -271,7 +235,6 @@ class OpenGLMatrixGestureDetector(var matrix: Matrix = Matrix(), listener: OnMat
                 v[2], v[5], 0f, 1f
             )
 
-            // multiply sourceMatrix and openGLMatrix to generate the new matrix
             android.opengl.Matrix.multiplyMM(destinationMatrix, 0, sourceMatrix, 0, openGLMatrix, 0)
         }
 

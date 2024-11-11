@@ -75,7 +75,6 @@ class VideoEditActivity : ComponentActivity() {
         isExporting = true
         var speed = currentSpeed
         val destinationPath = getVideoFilePath()
-        Log.d("data>>>", "currentSpeed>>> $currentSpeed")
 
         val selectedFilter = if(isFilterApplied) {
             GlGrayScaleFilter()
@@ -105,7 +104,6 @@ class VideoEditActivity : ComponentActivity() {
             .timeScale(speed)
             .listener(object : GlMp4Composer.Listener {
                 override fun onProgress(progress: Double) {
-                    Log.d("data>>>", "progressing $progress")
                 }
 
                 override fun onCompleted() {
@@ -115,7 +113,6 @@ class VideoEditActivity : ComponentActivity() {
                 }
 
                 override fun onCanceled() {
-                    Log.d("data>>>", "onCanceled()")
                     isExporting = false
                 }
 

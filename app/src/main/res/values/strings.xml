@@ -4,4 +4,5 @@
     <string name="title_activity_video_edit">VideoEditActivity</string>
     <string name="title_activity_picker">PickerActivity</string>
     <string name="title_activity_motion_control">MotionControlActivity</string>
+    <string name="title_activity_gesture_control">GestureControlActivity</string>
 </resources>

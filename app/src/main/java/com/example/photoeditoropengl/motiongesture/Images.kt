@@ -23,7 +23,7 @@ open class Images(
     var gestureDetector: OpenGLMatrixGestureDetector,
     var keepSize: Boolean = false,
     var usePositionAsCenter: Boolean = true,
-    val textureHandle: Int = -1,
+    var textureHandle: Int = -1,
     val preloadProgram: Int = -1
 ) {
 
