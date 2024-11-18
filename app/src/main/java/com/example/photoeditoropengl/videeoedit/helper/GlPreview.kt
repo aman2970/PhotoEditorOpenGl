@@ -2,7 +2,7 @@ package com.example.photoeditoropengl.videeoedit.helper
 
 import android.opengl.GLES20
 
-class GlPreview(private val texTarget: Int) : GlFilter(VERTEX_SHADER, createFragmentShaderSourceOESIfNeed(texTarget)) {
+class GlPreview(private val texTarget: Int) : GlFilterOld(VERTEX_SHADER, createFragmentShaderSourceOESIfNeed(texTarget)) {
 
     companion object {
         const val GL_TEXTURE_EXTERNAL_OES = 0x8D65

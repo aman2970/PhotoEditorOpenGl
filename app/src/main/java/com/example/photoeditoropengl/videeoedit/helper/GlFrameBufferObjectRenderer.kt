@@ -12,13 +12,13 @@ import javax.microedition.khronos.opengles.GL10
 abstract class GlFrameBufferObjectRenderer : GLSurfaceView.Renderer {
 
     private lateinit var framebufferObject: GlFramebufferObject
-    private lateinit var normalShader: GlFilter
+    private lateinit var normalShader: GlFilterOld
 
     private val runOnDraw: Queue<Runnable> = LinkedList()
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         framebufferObject = GlFramebufferObject()
-        normalShader = GlFilter()
+        normalShader = GlFilterOld()
         normalShader.setup()
         onSurfaceCreated(config)
     }

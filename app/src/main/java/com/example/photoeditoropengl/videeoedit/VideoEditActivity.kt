@@ -10,7 +10,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -29,10 +28,10 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.example.photoeditoropengl.R
 import com.example.photoeditoropengl.ui.theme.PhotoEditorOpenGlTheme
-import com.example.photoeditoropengl.videeoedit.filter.GlBitmapOverlaySample
 import com.example.photoeditoropengl.videeoedit.filter.GlCustomOverlayFilter
 import com.example.photoeditoropengl.videeoedit.filter.GlGrayScaleFilter
-import com.example.photoeditoropengl.videeoedit.helper.GlFilter
+import com.example.photoeditoropengl.videeoedit.helper.GlFilterOld
+import com.example.photoeditoropengl.videeoedit.helper.PlayerScaleType
 import com.example.photoeditoropengl.videeoedit.videosave.FillMode
 import com.example.photoeditoropengl.videeoedit.videosave.GlMp4Composer
 import com.example.photoeditoropengl.videeoedit.view.OpenGlPlayerView
@@ -89,7 +88,7 @@ class VideoEditActivity : ComponentActivity() {
             )
 
         }else{
-            GlFilter()
+            GlFilterOld()
         }
 
         if(speed == 0){
@@ -163,6 +162,7 @@ class VideoEditActivity : ComponentActivity() {
                     context.contentResolver.update(it, values, null, null)
                 }
             } catch (e: IOException) {
+
                 e.printStackTrace()
             }
         } else {
@@ -231,23 +231,28 @@ fun VideoEditingScreen(videoUri: String, isExporting: Boolean,onExport: (Boolean
 
     Column(modifier = Modifier.fillMaxSize()) {
 
-        AndroidView(
-            factory = { context ->
-                VideoPlayerWrapperView(context).apply {
-                    addView(OpenGlPlayerView(context).apply {
-                        player?.let { setExoPlayer(it) }
-                        openGlPlayerView = this
-                    })
-                }
-            },
+        Box(
             modifier = Modifier
-                .fillMaxWidth(),
-            update = { videoPlayerWrapperView ->
-                val view = videoPlayerWrapperView.getChildAt(0) as? OpenGlPlayerView
-                view?.setExoPlayer(player)
-                openGlPlayerView = view
-            }
-        )
+                .weight(1f)
+                .padding(bottom = 8.dp)
+        ) {
+            AndroidView(
+                factory = { context ->
+                    VideoPlayerWrapperView(context).apply {
+                        addView(OpenGlPlayerView(context).apply {
+                            player?.let { setExoPlayer(it) }
+                            openGlPlayerView = this
+                        })
+                    }
+                },
+                modifier = Modifier.fillMaxSize(),
+                update = { videoPlayerWrapperView ->
+                    val view = videoPlayerWrapperView.getChildAt(0) as? OpenGlPlayerView
+                    view?.setExoPlayer(player)
+                    openGlPlayerView = view
+                }
+            )
+        }
 
         Slider(
             value = sliderPosition,
@@ -264,7 +269,7 @@ fun VideoEditingScreen(videoUri: String, isExporting: Boolean,onExport: (Boolean
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(2.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             Button(onClick = {
@@ -281,11 +286,26 @@ fun VideoEditingScreen(videoUri: String, isExporting: Boolean,onExport: (Boolean
                 Text(if (isMute) "Unmute" else "Mute")
             }
 
+            Button(onClick = {
+                openGlPlayerView?.setPlayerAspectRatio(1f / 1f)
+              //  openGlPlayerView?.setPlayerScaleType(PlayerScaleType.RESIZE_FIT_WIDTH)
+            }) {
+                Text("1:1")
+            }
+
+            Button(onClick = {
+                openGlPlayerView?.setPlayerAspectRatio(4f / 5f)
+                //  openGlPlayerView?.setPlayerScaleType(PlayerScaleType.RESIZE_FIT_WIDTH)
+            }) {
+                Text("4:5")
+            }
+
+
           /*  Button(onClick = {
                 if (currentSpeed > 0.5f) {
                     currentSpeed -= 0.5f
                     player?.setPlaybackSpeed(currentSpeed)
-                }
+                },
             }) {
                 Text("Slow")
             }
@@ -303,9 +323,17 @@ fun VideoEditingScreen(videoUri: String, isExporting: Boolean,onExport: (Boolean
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(2.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
+
+            Button(onClick = {
+                openGlPlayerView?.setPlayerAspectRatio(16f / 9f)
+                //  openGlPlayerView?.setPlayerScaleType(PlayerScaleType.RESIZE_FIT_WIDTH)
+            }) {
+                Text("16:9")
+            }
+
 
             Button(onClick = {
                 isOverlayApplied = true
@@ -330,25 +358,33 @@ fun VideoEditingScreen(videoUri: String, isExporting: Boolean,onExport: (Boolean
                 Text("Filter")
             }
 
-            Button(onClick = {
-                isFilterApplied = false
-                openGlPlayerView?.setGlFilter(GlFilter())
-            }) {
-                Text("Default")
-            }
-
         }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(2.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
+
+            Button(onClick = {
+                openGlPlayerView?.setPlayerAspectRatio(9f / 16f)
+                //  openGlPlayerView?.setPlayerScaleType(PlayerScaleType.RESIZE_FIT_WIDTH)
+            }) {
+                Text("9:16")
+            }
 
             Button(onClick = {
                 onExport(isFilterApplied,isMute,currentSpeed.toInt(),isOverlayApplied)
             }) {
                 Text("Export")
+            }
+
+            Button(onClick = {
+                isFilterApplied = false
+                openGlPlayerView?.setGlFilter(GlFilterOld())
+            }) {
+                Text("Default")
             }
 
         }

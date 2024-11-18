@@ -51,6 +51,11 @@ class OpenGLHelper : View.OnTouchListener {
         return true
     }
 
+    fun onDelete(){
+        image.delete(0)
+        requestRenderListener.invoke()
+    }
+
 
     fun onTouchEvent(event: MotionEvent) : Boolean{
         mainGestureDetector.onTouchEvent(event)

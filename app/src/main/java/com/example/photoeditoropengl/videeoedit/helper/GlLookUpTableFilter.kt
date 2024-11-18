@@ -5,7 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.opengl.GLES20
 
-class GlLookUpTableFilter : GlFilter {
+class GlLookUpTableFilter : GlFilterOld {
 
     companion object {
         private const val FRAGMENT_SHADER =

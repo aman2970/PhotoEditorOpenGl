@@ -7,7 +7,7 @@ import android.media.MediaMetadataRetriever
 import android.media.MediaMuxer
 import android.util.Log
 import android.util.Size
-import com.example.photoeditoropengl.videeoedit.helper.GlFilter
+import com.example.photoeditoropengl.videeoedit.helper.GlFilterOld
 import java.io.FileDescriptor
 import java.io.IOException
 import kotlin.math.min
@@ -37,7 +37,7 @@ internal class GPUMp4ComposerEngine {
     fun compose(
         destPath: String?,
         outputResolution: Size,
-        filter: GlFilter?,
+        filter: GlFilterOld?,
         bitrate: Int,
         mute: Boolean,
         rotation: Rotation?,

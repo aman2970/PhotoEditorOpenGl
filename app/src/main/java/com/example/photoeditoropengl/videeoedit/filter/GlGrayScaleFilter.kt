@@ -1,8 +1,8 @@
 package com.example.photoeditoropengl.videeoedit.filter
 
-import com.example.photoeditoropengl.videeoedit.helper.GlFilter
+import com.example.photoeditoropengl.videeoedit.helper.GlFilterOld
 
-class GlGrayScaleFilter : GlFilter(DEFAULT_VERTEX_SHADER, FRAGMENT_SHADER) {
+class GlGrayScaleFilter : GlFilterOld(DEFAULT_VERTEX_SHADER, FRAGMENT_SHADER) {
     companion object {
         private const val FRAGMENT_SHADER = """
             precision mediump float;

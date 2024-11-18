@@ -1,11 +1,14 @@
 package com.example.photoeditoropengl.motiongesture
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,9 +33,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.example.photoeditoropengl.R
 import com.example.photoeditoropengl.imageedit.BitmapRenderer
 import com.example.photoeditoropengl.motiongesture.OpenGLStatic.DEVICE_HEIGHT
 import com.example.photoeditoropengl.motiongesture.OpenGLStatic.DEVICE_WIDTH
@@ -81,55 +86,91 @@ fun TransparentSquareBoxOne(openGLHelper: OpenGLHelper,surfaceView: OpenGLSurfac
         Box(
             modifier = Modifier
                 .fillMaxSize()
-            ,
+                .pointerInteropFilter { event ->
+                    surfaceView.openGLHelper.onTouchEvent(event)
+                    true
+                },
             contentAlignment = Alignment.Center
         ) {
             Box(
                 modifier = Modifier
-                    .size(110.dp)
+                    .size(90.dp)
                     .offset { IntOffset(boxPosition.x.roundToInt(), boxPosition.y.roundToInt()) }
                     .graphicsLayer(
                         scaleX = boxScale,
                         scaleY = boxScale,
                         rotationZ = boxRotation
                     )
-                    .border(BorderStroke(.5.dp, Color.Black))
+                    .border(BorderStroke(0.3.dp, Color.Black))
+            )
 
+            Box(
+                modifier = Modifier
+                    .size(90.dp)
+                    .offset { IntOffset(boxPosition.x.roundToInt(), boxPosition.y.roundToInt()) }
+                    .graphicsLayer(
+                        scaleX = boxScale,
+                        scaleY = boxScale,
+                        rotationZ = boxRotation
+                    )
             ) {
-                Box(
+                Image(
+                    painter = painterResource(id = R.drawable.ic_delete),
+                    contentDescription = null,
                     modifier = Modifier
-                        .size(20.dp)
-                        .offset(x = (-10).dp, y = (-10).dp)
-                        .background(Color.Red)
+                        .size(15.dp)
                         .align(Alignment.TopStart)
+                        .offset(x = (-5).dp, y = (-5).dp)
+                        .clickable {
+                            surfaceView.openGLHelper.onDelete()
+                            Toast.makeText(context, "Delete clicked", Toast.LENGTH_SHORT).show()
+                        }
+
                 )
-                Box(
+
+                Image(
+                    painter = painterResource(id = R.drawable.ic_edit),
+                    contentDescription = null,
                     modifier = Modifier
-                        .size(20.dp)
-                        .offset(x = (10).dp, y = (-10).dp)
-                        .background(Color.Green)
+                        .size(15.dp)
                         .align(Alignment.TopEnd)
+                        .offset(x = 5.dp, y = (-5).dp)
+                        .clickable {
+                            surfaceView.openGLHelper.onDelete()
+                            Toast.makeText(context, "Edit clicked", Toast.LENGTH_SHORT).show()
+                        }
                 )
-                Box(
+
+                Image(
+                    painter = painterResource(id = R.drawable.ic_flip),
+                    contentDescription = null,
                     modifier = Modifier
-                        .size(20.dp)
-                        .offset(x = (-10).dp, y = (10).dp)
-                        .background(Color.Blue)
+                        .size(15.dp)
                         .align(Alignment.BottomStart)
+                        .offset(x = (-5).dp, y = 5.dp)
+                        .clickable {
+                            surfaceView.openGLHelper.onDelete()
+                            Toast.makeText(context, "Flip clicked", Toast.LENGTH_SHORT).show()
+                        }
                 )
-                Box(
+
+                Image(
+                    painter = painterResource(id = R.drawable.ic_rotate),
+                    contentDescription = null,
                     modifier = Modifier
-                        .size(20.dp)
-                        .offset(x = (10).dp, y = (10).dp)
-                        .background(Color.Yellow)
+                        .size(15.dp)
                         .align(Alignment.BottomEnd)
+                        .offset(x = 5.dp, y = 5.dp)
+                        .clickable {
+                            surfaceView.openGLHelper.onDelete()
+                            Toast.makeText(context, "Rotate clicked", Toast.LENGTH_SHORT).show()
+                        }
                 )
             }
         }
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun TriangleScreenWithOverlay() {
     val context = LocalContext.current
@@ -147,10 +188,6 @@ fun TriangleScreenWithOverlay() {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .pointerInteropFilter { event ->
-                    glSurfaceView.openGLHelper.onTouchEvent(event)
-                    true
-                }
         ) {
             Column(
                 modifier = Modifier
@@ -166,6 +203,7 @@ fun TriangleScreenWithOverlay() {
 
                     TransparentSquareBoxOne(openGLHelper,glSurfaceView)
                 }
+
             }
 
         }

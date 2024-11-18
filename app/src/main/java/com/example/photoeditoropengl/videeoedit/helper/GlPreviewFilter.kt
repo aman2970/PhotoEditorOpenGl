@@ -1,5 +1,6 @@
 package com.example.photoeditoropengl.videeoedit.helper
 
+import android.opengl.GLES20
 import android.opengl.GLES20.GL_ARRAY_BUFFER
 import android.opengl.GLES20.GL_FLOAT
 import android.opengl.GLES20.GL_TEXTURE0
@@ -7,8 +8,10 @@ import android.opengl.GLES20.GL_TEXTURE_2D
 import android.opengl.GLES20.GL_TRIANGLE_STRIP
 
 import android.opengl.GLES20.*
+import com.example.photoeditoropengl.motiongesture.OpenGLStatic.loadShader
 
-class GlPreviewFilter(private val texTarget: Int) : GlFilter(VERTEX_SHADER, createFragmentShaderSourceOESIfNeed(texTarget)) {
+
+class GlPreviewFilter(private val texTarget: Int) : GlFilterOld(VERTEX_SHADER, createFragmentShaderSourceOESIfNeed(texTarget)) {
 
     companion object {
         const val GL_TEXTURE_EXTERNAL_OES = 0x8D65

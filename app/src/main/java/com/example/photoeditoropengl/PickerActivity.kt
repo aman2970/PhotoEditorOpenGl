@@ -110,13 +110,6 @@ fun VideoPicker(onPickVideo:() -> Unit){
                 Text("Motion\nControl")
             }
 
-            Button(
-                onClick = {   val intent = Intent(context, GestureControlActivity::class.java)
-                    context.startActivity(intent)},
-            ) {
-                Text("Gest\nControl")
-            }
-
         }
     }
 }

@@ -3,7 +3,7 @@ package com.example.photoeditoropengl.videeoedit.helper
 import android.content.res.Resources
 import android.opengl.GLES20
 
-open class GlFilter {
+open class GlFilterOld {
     companion object {
         const val DEFAULT_UNIFORM_SAMPLER = "sTexture"
 

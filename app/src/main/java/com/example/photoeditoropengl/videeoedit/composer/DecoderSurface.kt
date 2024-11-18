@@ -1,34 +1,31 @@
-package com.example.photoeditoropengl.videeoedit.videosave
+package com.example.photoeditoropengl.videeoedit.composer
 
 import android.graphics.SurfaceTexture
-import android.opengl.*
-import android.util.Log
+import android.opengl.EGL14
+import android.opengl.GLES20
+import android.opengl.Matrix
 import android.util.Size
 import android.view.Surface
+import androidx.annotation.NonNull
 
-import android.opengl.GLES20.*
-import com.example.photoeditoropengl.videeoedit.helper.EglUtil
-import com.example.photoeditoropengl.videeoedit.helper.GlFilterOld
-import com.example.photoeditoropengl.videeoedit.helper.GlFramebufferObject
-import com.example.photoeditoropengl.videeoedit.helper.GlPreviewFilter
-import com.example.photoeditoropengl.videeoedit.helper.GlSurfaceTexture
+class DecoderSurface(@NonNull private var filter: GlFilter, private val logger: Logger) : SurfaceTexture.OnFrameAvailableListener {
+    companion object {
+        private const val TAG = "DecoderSurface"
+        private const val VERBOSE = false
+    }
 
-
-class DecoderSurface(private var filter: GlFilterOld?) : SurfaceTexture.OnFrameAvailableListener {
-    private val TAG = "DecoderSurface"
-    private val VERBOSE = false
-    private var eglDisplay: EGLDisplay = EGL14.EGL_NO_DISPLAY
-    private var eglContext: EGLContext = EGL14.EGL_NO_CONTEXT
-    private var eglSurface: EGLSurface = EGL14.EGL_NO_SURFACE
-    var surface: Surface? = null
-    private val frameSyncObject = Object()
+    private var eglDisplay = EGL14.EGL_NO_DISPLAY
+    private var eglContext = EGL14.EGL_NO_CONTEXT
+    private var eglSurface = EGL14.EGL_NO_SURFACE
+    private lateinit var surface: Surface
+    private val frameSyncObject = Object() // guards frameAvailable
     private var frameAvailable = false
 
-    private var texName = 0
+    private var texName: Int = 0
     private lateinit var previewTexture: GlSurfaceTexture
     private lateinit var filterFramebufferObject: GlFramebufferObject
     private lateinit var previewShader: GlPreviewFilter
-    private lateinit var normalShader: GlFilterOld
+    private lateinit var normalShader: GlFilter
     private lateinit var framebufferObject: GlFramebufferObject
 
     private val MVPMatrix = FloatArray(16)
@@ -38,10 +35,10 @@ class DecoderSurface(private var filter: GlFilterOld?) : SurfaceTexture.OnFrameA
     private val STMatrix = FloatArray(16)
 
     private var rotation = Rotation.NORMAL
-    private var outputResolution: Size? = null
-    private var inputResolution: Size? = null
+    private lateinit var outputResolution: Size
+    private lateinit var inputResolution: Size
     private var fillMode = FillMode.PRESERVE_ASPECT_FIT
-    private var fillModeItem: FillModeItem? = null
+    private var fillModeCustomItem: FillModeCustomItem? = null
     private var flipVertical = false
     private var flipHorizontal = false
 
@@ -50,25 +47,25 @@ class DecoderSurface(private var filter: GlFilterOld?) : SurfaceTexture.OnFrameA
     }
 
     private fun setup() {
-        filter?.setup()
+        filter.setup()
         framebufferObject = GlFramebufferObject()
-        normalShader = GlFilterOld()
-        normalShader.setup()
+        normalShader = GlFilter().apply { setup() }
 
         val args = IntArray(1)
         GLES20.glGenTextures(args.size, args, 0)
         texName = args[0]
 
-        previewTexture = GlSurfaceTexture(texName)
-        previewTexture!!.setOnFrameAvailableListener(this)
-        surface = Surface(previewTexture!!.surfaceTexture)
+        // Create SurfaceTexture
+        previewTexture = GlSurfaceTexture(texName).apply {
+            setOnFrameAvailableListener(this@DecoderSurface)
+        }
+        surface = Surface(previewTexture.surfaceTexture)
 
-        glBindTexture(previewTexture!!.getTextureTarget(), texName)
-        EglUtil.setupSampler(previewTexture!!.getTextureTarget(), GLES20.GL_LINEAR, GLES20.GL_NEAREST)
-        glBindTexture(GL_TEXTURE_2D, 0)
+        GLES20.glBindTexture(previewTexture.textureTarget, texName)
+        EglUtil.setupSampler(previewTexture.textureTarget, GLES20.GL_LINEAR, GLES20.GL_NEAREST)
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0)
 
-        previewShader = GlPreviewFilter(previewTexture!!.getTextureTarget())
-        previewShader.setup()
+        previewShader = GlPreviewFilter(previewTexture.textureTarget).apply { setup() }
         filterFramebufferObject = GlFramebufferObject()
 
         Matrix.setLookAtM(
@@ -78,7 +75,7 @@ class DecoderSurface(private var filter: GlFilterOld?) : SurfaceTexture.OnFrameA
             0.0f, 1.0f, 0.0f
         )
 
-        glGetIntegerv(GL_MAX_TEXTURE_SIZE, args, 0)
+        GLES20.glGetIntegerv(GLES20.GL_MAX_TEXTURE_SIZE, args, 0)
     }
 
     fun release() {
@@ -88,23 +85,25 @@ class DecoderSurface(private var filter: GlFilterOld?) : SurfaceTexture.OnFrameA
             EGL14.eglReleaseThread()
             EGL14.eglTerminate(eglDisplay)
         }
-        surface?.release()
+
+        surface.release()
         previewTexture.release()
 
         eglDisplay = EGL14.EGL_NO_DISPLAY
         eglContext = EGL14.EGL_NO_CONTEXT
         eglSurface = EGL14.EGL_NO_SURFACE
-        filter?.release()
-        filter = null
-        surface = null
+
+        filter.release()
     }
 
+    fun getSurface(): Surface = surface
+
     fun awaitNewImage() {
-        val TIMEOUT_MS = 10000
+        val TIMEOUT_MS = 10000L
         synchronized(frameSyncObject) {
             while (!frameAvailable) {
                 try {
-                    frameSyncObject.wait(TIMEOUT_MS.toLong())
+                    frameSyncObject.wait(TIMEOUT_MS)
                     if (!frameAvailable) {
                         throw RuntimeException("Surface frame wait timed out")
                     }
@@ -114,31 +113,42 @@ class DecoderSurface(private var filter: GlFilterOld?) : SurfaceTexture.OnFrameA
             }
             frameAvailable = false
         }
+
         previewTexture.updateTexImage()
         previewTexture.getTransformMatrix(STMatrix)
     }
 
     fun drawImage() {
         framebufferObject.enable()
-        glViewport(0, 0, framebufferObject.width, framebufferObject.height)
+        GLES20.glViewport(0, 0, framebufferObject.width, framebufferObject.height)
 
-        if (filter != null) {
+        filter?.let {
             filterFramebufferObject.enable()
-            glViewport(0, 0, filterFramebufferObject.width, filterFramebufferObject.height)
+            GLES20.glViewport(0, 0, filterFramebufferObject.width, filterFramebufferObject.height)
+            GLES20.glClearColor(
+                it.clearColor[0],
+                it.clearColor[1],
+                it.clearColor[2],
+                it.clearColor[3]
+            )
         }
 
-        glClear(GL_COLOR_BUFFER_BIT)
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
+
         Matrix.multiplyMM(MVPMatrix, 0, VMatrix, 0, MMatrix, 0)
         Matrix.multiplyMM(MVPMatrix, 0, ProjMatrix, 0, MVPMatrix, 0)
 
-        val scaleDirectionX = if (flipHorizontal) -1 else 1
-        val scaleDirectionY = if (flipVertical) -1 else 1
+        val scaleDirectionX = if (flipHorizontal) -1f else 1f
+        val scaleDirectionY = if (flipVertical) -1f else 1f
 
         when (fillMode) {
             FillMode.PRESERVE_ASPECT_FIT -> {
                 val scale = FillMode.getScaleAspectFit(
-                    rotation.rotation, inputResolution!!.width,
-                    inputResolution!!.height, outputResolution!!.width, outputResolution!!.height
+                    rotation.rotation,
+                    inputResolution.width,
+                    inputResolution.height,
+                    outputResolution.width,
+                    outputResolution.height
                 )
                 Matrix.scaleM(MVPMatrix, 0, scale[0] * scaleDirectionX, scale[1] * scaleDirectionY, 1f)
                 if (rotation != Rotation.NORMAL) {
@@ -147,8 +157,11 @@ class DecoderSurface(private var filter: GlFilterOld?) : SurfaceTexture.OnFrameA
             }
             FillMode.PRESERVE_ASPECT_CROP -> {
                 val scale = FillMode.getScaleAspectCrop(
-                    rotation.rotation, inputResolution!!.width,
-                    inputResolution!!.height, outputResolution!!.width, outputResolution!!.height
+                    rotation.rotation,
+                    inputResolution.width,
+                    inputResolution.height,
+                    outputResolution.width,
+                    outputResolution.height
                 )
                 Matrix.scaleM(MVPMatrix, 0, scale[0] * scaleDirectionX, scale[1] * scaleDirectionY, 1f)
                 if (rotation != Rotation.NORMAL) {
@@ -156,35 +169,54 @@ class DecoderSurface(private var filter: GlFilterOld?) : SurfaceTexture.OnFrameA
                 }
             }
             FillMode.CUSTOM -> {
-                fillModeItem?.let {
-                    Matrix.translateM(MVPMatrix, 0, it.translateX, -it.translateY, 0f)
+                fillModeCustomItem?.let { item ->
+                    Matrix.translateM(MVPMatrix, 0, item.translateX, -item.translateY, 0f)
                     val scale = FillMode.getScaleAspectCrop(
-                        rotation.rotation, inputResolution!!.width,
-                        inputResolution!!.height, outputResolution!!.width, outputResolution!!.height
+                        rotation.rotation,
+                        inputResolution.width,
+                        inputResolution.height,
+                        outputResolution.width,
+                        outputResolution.height
                     )
-                    Matrix.scaleM(MVPMatrix, 0, it.scale * scale[0] * scaleDirectionX, it.scale * scale[1] * scaleDirectionY, 1f)
-                    Matrix.rotateM(MVPMatrix, 0, -(rotation.rotation + it.rotate), 0f, 0f, 1f)
+
+                    if (item.rotate == 0f || item.rotate == 180f) {
+                        Matrix.scaleM(
+                            MVPMatrix, 0,
+                            item.scale * scale[0] * scaleDirectionX,
+                            item.scale * scale[1] * scaleDirectionY,
+                            1f
+                        )
+                    } else {
+                        Matrix.scaleM(
+                            MVPMatrix, 0,
+                            item.scale * scale[0] * (1 / item.videoWidth * item.videoHeight) * scaleDirectionX,
+                            item.scale * scale[1] * (item.videoWidth / item.videoHeight) * scaleDirectionY,
+                            1f
+                        )
+                    }
+
+                    Matrix.rotateM(MVPMatrix, 0, -(rotation.rotation + item.rotate), 0f, 0f, 1f)
                 }
             }
-            else -> {}
         }
 
         previewShader.draw(texName, MVPMatrix, STMatrix, 1f)
 
-        if (filter != null) {
+        filter?.let {
             framebufferObject.enable()
-            glClear(GL_COLOR_BUFFER_BIT)
-            filter!!.draw(filterFramebufferObject.texName, framebufferObject)
+            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
+            it.draw(filterFramebufferObject.texName, framebufferObject)
         }
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0)
-        glViewport(0, 0, framebufferObject.width, framebufferObject.height)
-        glClear(GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0)
+        GLES20.glViewport(0, 0, framebufferObject.width, framebufferObject.height)
+
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
         normalShader.draw(framebufferObject.texName, null)
     }
 
     override fun onFrameAvailable(st: SurfaceTexture) {
-        if (VERBOSE) Log.d(TAG, "new frame available")
+        if (VERBOSE) logger.debug(TAG, "new frame available")
         synchronized(frameSyncObject) {
             if (frameAvailable) {
                 throw RuntimeException("frameAvailable already set, frame could be dropped")
@@ -210,8 +242,8 @@ class DecoderSurface(private var filter: GlFilterOld?) : SurfaceTexture.OnFrameA
         this.inputResolution = resolution
     }
 
-    fun setFillModeCustomItem(fillModeItem: FillModeItem?) {
-        this.fillModeItem = fillModeItem
+    fun setFillModeCustomItem(fillModeCustomItem: FillModeCustomItem) {
+        this.fillModeCustomItem = fillModeCustomItem
     }
 
     fun setFlipVertical(flipVertical: Boolean) {
@@ -223,13 +255,15 @@ class DecoderSurface(private var filter: GlFilterOld?) : SurfaceTexture.OnFrameA
     }
 
     fun completeParams() {
-        val width = outputResolution!!.width
-        val height = outputResolution!!.height
+        val width = outputResolution.width
+        val height = outputResolution.height
+
         framebufferObject.setup(width, height)
         normalShader.setFrameSize(width, height)
 
         filterFramebufferObject.setup(width, height)
         previewShader.setFrameSize(width, height)
+
         Matrix.frustumM(ProjMatrix, 0, -1f, 1f, -1f, 1f, 5f, 7f)
         Matrix.setIdentityM(MMatrix, 0)
 

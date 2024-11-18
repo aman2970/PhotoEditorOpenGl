@@ -9,7 +9,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import com.example.photoeditoropengl.videeoedit.helper.GlPlayerRenderer
 import com.example.photoeditoropengl.videeoedit.helper.GlConfig
 import com.example.photoeditoropengl.videeoedit.helper.GlContextFactory
-import com.example.photoeditoropengl.videeoedit.helper.GlFilter
+import com.example.photoeditoropengl.videeoedit.helper.GlFilterOld
 import com.example.photoeditoropengl.videeoedit.helper.PlayerScaleType
 
 
@@ -44,12 +44,17 @@ class OpenGlPlayerView @JvmOverloads constructor(
         return this
     }
 
-    fun setGlFilter(glFilter: GlFilter) {
+    fun setGlFilter(glFilter: GlFilterOld) {
         renderer.setGlFilter(glFilter)
     }
 
     fun setPlayerScaleType(playerScaleType: PlayerScaleType) {
         this.playerScaleType = playerScaleType
+        requestLayout()
+    }
+
+    fun setPlayerAspectRatio(aspectRatio: Float) {
+        videoAspect = aspectRatio
         requestLayout()
     }
 
@@ -65,7 +70,9 @@ class OpenGlPlayerView @JvmOverloads constructor(
         when (playerScaleType) {
             PlayerScaleType.RESIZE_FIT_WIDTH -> viewHeight = (measuredWidth / videoAspect).toInt()
             PlayerScaleType.RESIZE_FIT_HEIGHT -> viewWidth = (measuredHeight * videoAspect).toInt()
-            PlayerScaleType.RESIZE_NONE -> {}
+            PlayerScaleType.RESIZE_NONE -> {
+
+            }
         }
 
         setMeasuredDimension(viewWidth, viewHeight)

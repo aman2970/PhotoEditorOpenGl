@@ -6,7 +6,7 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.util.Log
 import android.util.Size
-import com.example.photoeditoropengl.videeoedit.helper.GlFilter
+import com.example.photoeditoropengl.videeoedit.helper.GlFilterOld
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileNotFoundException
@@ -19,7 +19,7 @@ class GlMp4Composer {
     private var context: Context? = null
     private val srcPath: String
     private val destPath: String
-    private var filter: GlFilter? = null
+    private var filter: GlFilterOld? = null
     private var outputResolution: Size? = null
     private var bitrate = -1
     private var mute = false
@@ -45,7 +45,7 @@ class GlMp4Composer {
         this.destPath = destPath
     }
 
-    fun filter(filter: GlFilter?): GlMp4Composer {
+    fun filter(filter: GlFilterOld?): GlMp4Composer {
         this.filter = filter
         return this
     }
@@ -162,7 +162,7 @@ class GlMp4Composer {
             val srcVideoResolution = getVideoResolution(srcPath, videoRotate)
 
             if (filter == null) {
-                filter = GlFilter()
+                filter = GlFilterOld()
             }
 
             if (fillMode == null) {

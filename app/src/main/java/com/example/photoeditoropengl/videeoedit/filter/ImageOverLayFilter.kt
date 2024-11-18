@@ -2,7 +2,7 @@ package com.example.photoeditoropengl.videeoedit.filter
 
 import android.opengl.GLES20
 import android.opengl.GLUtils
-import com.example.photoeditoropengl.videeoedit.helper.GlFilter
+import com.example.photoeditoropengl.videeoedit.helper.GlFilterOld
 import android.content.Context
 import android.graphics.BitmapFactory
 
@@ -13,7 +13,7 @@ class GlImageOverlayFilter(
     private val overlayY: Float = 0f,
     private val overlayWidth: Float = 0.3f,
     private val overlayHeight: Float = 0.3f
-) : GlFilter(DEFAULT_VERTEX_SHADER, FRAGMENT_SHADER) {
+) : GlFilterOld(DEFAULT_VERTEX_SHADER, FRAGMENT_SHADER) {
 
     private var overlayTexture = 0
     private var frameWidth = 0

@@ -6,9 +6,9 @@ import android.graphics.Color
 import android.opengl.GLES20
 import android.opengl.GLUtils
 import android.util.Size
-import com.example.photoeditoropengl.videeoedit.helper.GlFilter
+import com.example.photoeditoropengl.videeoedit.helper.GlFilterOld
 
-abstract class GlOverlayFilter : GlFilter(DEFAULT_VERTEX_SHADER, FRAGMENT_SHADER) {
+abstract class GlOverlayFilter : GlFilterOld(DEFAULT_VERTEX_SHADER, FRAGMENT_SHADER) {
     private val textures = IntArray(1)
 
     private var bitmap: Bitmap? = null

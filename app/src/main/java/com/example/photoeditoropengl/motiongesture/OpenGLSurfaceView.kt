@@ -39,7 +39,7 @@ class OpenGLSurfaceView : GLSurfaceView {
         }
 
         openGLHelper = OpenGLHelper()
-      //  this.setOnTouchListener(openGLHelper)
+      // this.setOnTouchListener(openGLHelper)
 
         openGLRenderer = OpenGLRenderer(context, openGLHelper) {
             requestRender()

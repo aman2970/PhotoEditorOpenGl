@@ -1,7 +1,9 @@
 package com.example.photoeditoropengl.videeoedit.helper
 
+import android.graphics.Bitmap
 import android.graphics.SurfaceTexture
 import android.opengl.GLES20
+import android.opengl.GLUtils
 import android.opengl.Matrix
 import android.os.Handler
 import android.os.Looper
@@ -10,7 +12,10 @@ import android.view.Surface
 import androidx.media3.exoplayer.ExoPlayer
 
 import com.example.photoeditoropengl.videeoedit.view.OpenGlPlayerView
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import javax.microedition.khronos.egl.EGLConfig
+
 
 class GlPlayerRenderer(private val glPreview: OpenGlPlayerView) : GlFrameBufferObjectRenderer(), SurfaceTexture.OnFrameAvailableListener {
     private var videoEncoder: VideoEncoder? = null
@@ -38,7 +43,7 @@ class GlPlayerRenderer(private val glPreview: OpenGlPlayerView) : GlFrameBufferO
     private lateinit var filterFramebufferObject: GlFramebufferObject
     private lateinit var previewFilter: GlPreviewFilter
 
-    private var glFilter: GlFilter? = null
+    private var glFilter: GlFilterOld? = null
     private var isNewFilter = false
 
     private var aspectRatio = 1f
@@ -49,7 +54,7 @@ class GlPlayerRenderer(private val glPreview: OpenGlPlayerView) : GlFrameBufferO
         Matrix.setIdentityM(STMatrix, 0)
     }
 
-    fun setGlFilter(filter: GlFilter) {
+    fun setGlFilter(filter: GlFilterOld) {
         glPreview.queueEvent {
             glFilter?.let {
                 it.release()
@@ -64,7 +69,7 @@ class GlPlayerRenderer(private val glPreview: OpenGlPlayerView) : GlFrameBufferO
     }
 
     override fun onSurfaceCreated(config: EGLConfig?) {
-        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
+        GLES20.glClearColor(1.0f, 0.0f, 0.0f, 1.0f)
 
         val args = IntArray(1)
         GLES20.glGenTextures(args.size, args, 0)
@@ -108,6 +113,7 @@ class GlPlayerRenderer(private val glPreview: OpenGlPlayerView) : GlFrameBufferO
         aspectRatio = width.toFloat() / height
         Matrix.frustumM(ProjMatrix, 0, -aspectRatio, aspectRatio, -1f, 1f, 5f, 7f)
         Matrix.setIdentityM(MMatrix, 0)
+
     }
 
     override fun onDrawFrame(fbo: GlFramebufferObject) {
