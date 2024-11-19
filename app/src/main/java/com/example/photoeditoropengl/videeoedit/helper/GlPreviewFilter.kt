@@ -16,7 +16,7 @@ class GlPreviewFilter(private val texTarget: Int) : GlFilterOld(VERTEX_SHADER, c
     companion object {
         const val GL_TEXTURE_EXTERNAL_OES = 0x8D65
 
-        private const val VERTEX_SHADER = """
+ /*       private const val VERTEX_SHADER = """
             uniform mat4 uMVPMatrix;
             uniform mat4 uSTMatrix;
             uniform float uCRatio;
@@ -28,6 +28,24 @@ class GlPreviewFilter(private val texTarget: Int) : GlFilterOld(VERTEX_SHADER, c
             void main() {
                 vec4 scaledPos = aPosition;
                 scaledPos.x = scaledPos.x * uCRatio;
+                gl_Position = uMVPMatrix * scaledPos;
+                vTextureCoord = (uSTMatrix * aTextureCoord).xy;
+            }
+        """*/
+
+        private const val VERTEX_SHADER = """
+            uniform mat4 uMVPMatrix;
+            uniform mat4 uSTMatrix;
+            uniform float uCRatio;
+
+            attribute vec4 aPosition;
+            attribute vec4 aTextureCoord;
+            varying highp vec2 vTextureCoord;
+
+            void main() {
+                // Scale the position to maintain aspect ratio while fitting in square
+                vec4 scaledPos = aPosition;
+                scaledPos.xy *= uCRatio;
                 gl_Position = uMVPMatrix * scaledPos;
                 vTextureCoord = (uSTMatrix * aTextureCoord).xy;
             }

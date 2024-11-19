@@ -30,6 +30,7 @@ import com.example.photoeditoropengl.R
 import com.example.photoeditoropengl.ui.theme.PhotoEditorOpenGlTheme
 import com.example.photoeditoropengl.videeoedit.filter.GlCustomOverlayFilter
 import com.example.photoeditoropengl.videeoedit.filter.GlGrayScaleFilter
+import com.example.photoeditoropengl.videeoedit.helper.AspectRatio
 import com.example.photoeditoropengl.videeoedit.helper.GlFilterOld
 import com.example.photoeditoropengl.videeoedit.helper.PlayerScaleType
 import com.example.photoeditoropengl.videeoedit.videosave.FillMode
@@ -287,14 +288,15 @@ fun VideoEditingScreen(videoUri: String, isExporting: Boolean,onExport: (Boolean
             }
 
             Button(onClick = {
-                openGlPlayerView?.setPlayerAspectRatio(1f / 1f)
-              //  openGlPlayerView?.setPlayerScaleType(PlayerScaleType.RESIZE_FIT_WIDTH)
+                openGlPlayerView?.setAspectRatio(AspectRatio.RATIO_1_1)
+                //  openGlPlayerView?.setPlayerScaleType(PlayerScaleType.RESIZE_FIT_WIDTH)
             }) {
                 Text("1:1")
             }
 
             Button(onClick = {
-                openGlPlayerView?.setPlayerAspectRatio(4f / 5f)
+                openGlPlayerView?.setAspectRatio(AspectRatio.RATIO_4_5)
+
                 //  openGlPlayerView?.setPlayerScaleType(PlayerScaleType.RESIZE_FIT_WIDTH)
             }) {
                 Text("4:5")
@@ -328,7 +330,7 @@ fun VideoEditingScreen(videoUri: String, isExporting: Boolean,onExport: (Boolean
         ) {
 
             Button(onClick = {
-                openGlPlayerView?.setPlayerAspectRatio(16f / 9f)
+                openGlPlayerView?.setAspectRatio(AspectRatio.RATIO_16_9)
                 //  openGlPlayerView?.setPlayerScaleType(PlayerScaleType.RESIZE_FIT_WIDTH)
             }) {
                 Text("16:9")
@@ -368,7 +370,8 @@ fun VideoEditingScreen(videoUri: String, isExporting: Boolean,onExport: (Boolean
         ) {
 
             Button(onClick = {
-                openGlPlayerView?.setPlayerAspectRatio(9f / 16f)
+                openGlPlayerView?.setAspectRatio(AspectRatio.RATIO_9_16)
+
                 //  openGlPlayerView?.setPlayerScaleType(PlayerScaleType.RESIZE_FIT_WIDTH)
             }) {
                 Text("9:16")

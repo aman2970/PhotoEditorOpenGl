@@ -50,6 +50,13 @@ class GlPlayerRenderer(private val glPreview: OpenGlPlayerView) : GlFrameBufferO
     private var exoPlayer: ExoPlayer? = null
     private val uiHandler = Handler(Looper.getMainLooper())
 
+    private var viewportX = 0
+    private var viewportY = 0
+    private var viewportWidth = 0
+    private var viewportHeight = 0
+    private var screenRatio = 1f
+    private var currentAspectRatio = AspectRatio.RATIO_16_9
+
     init {
         Matrix.setIdentityM(STMatrix, 0)
     }
@@ -65,6 +72,16 @@ class GlPlayerRenderer(private val glPreview: OpenGlPlayerView) : GlFrameBufferO
             glFilter = filter
             isNewFilter = true
             glPreview.requestRender()
+        }
+    }
+
+    fun setAspectRatio(ratio: AspectRatio) {
+        if (currentAspectRatio != ratio) {
+            currentAspectRatio = ratio
+            glPreview.queueEvent {
+                onSurfaceChanged(viewportWidth, viewportHeight)
+                glPreview.requestRender()
+            }
         }
     }
 
@@ -106,12 +123,68 @@ class GlPlayerRenderer(private val glPreview: OpenGlPlayerView) : GlFrameBufferO
 
     override fun onSurfaceChanged(width: Int, height: Int) {
         Log.d(TAG, "onSurfaceChanged width = $width  height = $height")
-        filterFramebufferObject.setup(width, height)
+      /*  filterFramebufferObject.setup(width, height)
         previewFilter.setFrameSize(width, height)
         glFilter?.setFrameSize(width, height)
 
         aspectRatio = width.toFloat() / height
         Matrix.frustumM(ProjMatrix, 0, -aspectRatio, aspectRatio, -1f, 1f, 5f, 7f)
+        Matrix.setIdentityM(MMatrix, 0)
+*/
+      /*  if (width > height) {
+            // Width is larger, center horizontally
+            viewportHeight = height
+            viewportWidth = height // Make it square
+            viewportX = (width - height) / 2
+            viewportY = 0
+        } else {
+            // Height is larger, center vertically
+            viewportWidth = width
+            viewportHeight = width // Make it square
+            viewportX = 0
+            viewportY = (height - width) / 2
+        }
+
+        // Setup framebuffer with square dimensions
+        filterFramebufferObject.setup(viewportWidth, viewportHeight)
+        previewFilter.setFrameSize(viewportWidth, viewportHeight)
+        glFilter?.setFrameSize(viewportWidth, viewportHeight)
+
+        // Use 1:1 aspect ratio for projection matrix
+        Matrix.frustumM(ProjMatrix, 0, -1f, 1f, -1f, 1f, 5f, 7f)
+        Matrix.setIdentityM(MMatrix, 0)*/
+
+        // Store original dimensions
+        val screenWidth = width
+        val screenHeight = height
+
+        // Calculate target aspect ratio
+        val targetRatio = currentAspectRatio.getValue()
+        screenRatio = width.toFloat() / height.toFloat()
+
+        // Calculate viewport dimensions
+        if (screenRatio > targetRatio) {
+            // Screen is wider than target ratio
+            viewportHeight = height
+            viewportWidth = (height * targetRatio).toInt()
+            viewportX = (width - viewportWidth) / 2
+            viewportY = 0
+        } else {
+            // Screen is taller than target ratio
+            viewportWidth = width
+            viewportHeight = (width / targetRatio).toInt()
+            viewportX = 0
+            viewportY = (height - viewportHeight) / 2
+        }
+
+        // Setup framebuffer with calculated dimensions
+        filterFramebufferObject.setup(viewportWidth, viewportHeight)
+        previewFilter.setFrameSize(viewportWidth, viewportHeight)
+        glFilter?.setFrameSize(viewportWidth, viewportHeight)
+
+        // Calculate projection matrix based on target ratio
+        val projRatio = targetRatio
+        Matrix.frustumM(ProjMatrix, 0, -projRatio, projRatio, -1f, 1f, 5f, 7f)
         Matrix.setIdentityM(MMatrix, 0)
 
     }
@@ -155,7 +228,7 @@ class GlPlayerRenderer(private val glPreview: OpenGlPlayerView) : GlFrameBufferO
             isNewFilter = false
         }
 
-        glFilter?.let {
+     /*   glFilter?.let {
             filterFramebufferObject.enable()
             GLES20.glViewport(0, 0, filterFramebufferObject.width, filterFramebufferObject.height)
         }
@@ -166,6 +239,30 @@ class GlPlayerRenderer(private val glPreview: OpenGlPlayerView) : GlFrameBufferO
         Matrix.multiplyMM(MVPMatrix, 0, ProjMatrix, 0, MVPMatrix, 0)
 
         previewFilter.draw(texName, MVPMatrix, STMatrix, aspectRatio)
+
+        glFilter?.let {
+            fbo.enable()
+            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
+            it.draw(filterFramebufferObject.texName, fbo)
+        }*/
+
+        // Set viewport for filter rendering
+        glFilter?.let {
+            filterFramebufferObject.enable()
+            GLES20.glViewport(0, 0, viewportWidth, viewportHeight)
+        }
+
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
+
+        // Calculate MVP matrix for square rendering
+        Matrix.multiplyMM(MVPMatrix, 0, VMatrix, 0, MMatrix, 0)
+        Matrix.multiplyMM(MVPMatrix, 0, ProjMatrix, 0, MVPMatrix, 0)
+
+        // Set viewport to maintain aspect ratio
+        GLES20.glViewport(viewportX, viewportY, viewportWidth, viewportHeight)
+
+        // Draw with current aspect ratio
+        previewFilter.draw(texName, MVPMatrix, STMatrix, currentAspectRatio.getValue())
 
         glFilter?.let {
             fbo.enable()
@@ -210,4 +307,13 @@ class GlPlayerRenderer(private val glPreview: OpenGlPlayerView) : GlFrameBufferO
         glFilter?.release()
         previewTexture.release()
     }
+}
+
+enum class AspectRatio(val width: Float, val height: Float) {
+    RATIO_1_1(1f, 1f),
+    RATIO_4_5(4f, 5f),
+    RATIO_16_9(16f, 9f),
+    RATIO_9_16(9f, 16f);
+
+    fun getValue(): Float = width / height
 }

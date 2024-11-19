@@ -39,8 +39,6 @@ class BitmapRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
     private var doodlePaths = mutableListOf<FloatArray>()
     private lateinit var doodleBuffer: FloatBuffer
-
-
     private val vertices = floatArrayOf(
         -0.5f, -0.5f, 0.0f,  // Bottom-left
         0.5f, -0.5f, 0.0f,   // Bottom-right
@@ -60,8 +58,21 @@ class BitmapRenderer(private val context: Context) : GLSurfaceView.Renderer {
     private var textureId = 0
     private var program = 0
     private val tintColor = floatArrayOf(1.0f, 0.0f, 0.0f, 0.5f)
-
     private var backgroundColor = floatArrayOf(1.0f, 1.0f, 1.0f, 1.0f)
+
+
+    /** Experimental **/
+    private lateinit var backgroundVertexBuffer: FloatBuffer
+    private var backgroundProgram = 0
+
+    private val backgroundVertices = floatArrayOf(
+        -1.0f, -1.0f, 0.0f,  // Bottom-left
+        1.0f, -1.0f, 0.0f,   // Bottom-right
+        -1.0f, 1.0f, 0.0f,   // Top-left
+        1.0f, 1.0f, 0.0f     // Top-right
+    )
+
+
 
     fun setBackgroundColor(r: Float, g: Float, b: Float, a: Float) {
         backgroundColor[0] = r
@@ -75,15 +86,11 @@ class BitmapRenderer(private val context: Context) : GLSurfaceView.Renderer {
         initializeBuffers()
         loadTexture()
         initializeShaderProgram()
+        initializeBackgroundShaderProgram()
     }
 
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
-        viewportWidth = width
-   /*     viewportHeight = height
-        GLES20.glViewport(0, 0, width, height)
-
-        initializeFramebuffer()*/
         viewportWidth = width
         viewportHeight = height
         GLES20.glViewport(0, 0, width, height)
@@ -148,11 +155,14 @@ class BitmapRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
     override fun onDrawFrame(gl: GL10?) {
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0)
-
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
         GLES20.glClearColor(backgroundColor[0], backgroundColor[1], backgroundColor[2], backgroundColor[3])
-        GLES20.glUseProgram(program)
 
+        // Draw background surface first
+        drawBackground()
+
+
+        GLES20.glUseProgram(program)
         setUpModelViewMatrix()
         setUpShaderAttributes()
         drawImage()
@@ -170,6 +180,17 @@ class BitmapRenderer(private val context: Context) : GLSurfaceView.Renderer {
         }
 
     }
+    private fun drawBackground() {
+        GLES20.glUseProgram(backgroundProgram)
+
+        val positionHandle = GLES20.glGetAttribLocation(backgroundProgram, "a_Position")
+        GLES20.glEnableVertexAttribArray(positionHandle)
+        GLES20.glVertexAttribPointer(positionHandle, 3, GLES20.GL_FLOAT, false, 0, backgroundVertexBuffer)
+
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
+        GLES20.glDisableVertexAttribArray(positionHandle)
+    }
+
 
     fun updateDoodlePath(path: List<FloatArray>) {
         doodlePaths = path.toMutableList()
@@ -215,6 +236,24 @@ class BitmapRenderer(private val context: Context) : GLSurfaceView.Renderer {
             .asFloatBuffer()
             .put(textureCoordinates)
         textureBuffer.position(0)
+
+        // Background surface buffer
+        backgroundVertexBuffer = ByteBuffer.allocateDirect(backgroundVertices.size * 4)
+            .order(ByteOrder.nativeOrder())
+            .asFloatBuffer()
+            .put(backgroundVertices)
+        backgroundVertexBuffer.position(0)
+    }
+
+    private fun initializeBackgroundShaderProgram() {
+        val vertexShader = loadShader(GLES20.GL_VERTEX_SHADER, backgroundVertexShaderCode)
+        val fragmentShader = loadShader(GLES20.GL_FRAGMENT_SHADER, backgroundFragmentShaderCode)
+
+        backgroundProgram = GLES20.glCreateProgram().apply {
+            GLES20.glAttachShader(this, vertexShader)
+            GLES20.glAttachShader(this, fragmentShader)
+            GLES20.glLinkProgram(this)
+        }
     }
 
     private fun loadTexture() {
@@ -449,6 +488,22 @@ class BitmapRenderer(private val context: Context) : GLSurfaceView.Renderer {
                 } else {
                     gl_FragColor = texColor;
                 }
+            }
+        """
+
+        private const val backgroundVertexShaderCode = """
+            attribute vec4 a_Position;
+            
+            void main() {
+                gl_Position = a_Position;
+            }
+        """
+
+        private const val backgroundFragmentShaderCode = """
+            precision mediump float;
+            
+            void main() {
+                gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); 
             }
         """
     }

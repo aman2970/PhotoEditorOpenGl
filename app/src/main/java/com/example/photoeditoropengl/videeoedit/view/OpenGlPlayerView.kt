@@ -6,6 +6,7 @@ import android.util.AttributeSet
 import androidx.media3.common.Player
 import androidx.media3.common.VideoSize
 import androidx.media3.exoplayer.ExoPlayer
+import com.example.photoeditoropengl.videeoedit.helper.AspectRatio
 import com.example.photoeditoropengl.videeoedit.helper.GlPlayerRenderer
 import com.example.photoeditoropengl.videeoedit.helper.GlConfig
 import com.example.photoeditoropengl.videeoedit.helper.GlContextFactory
@@ -46,6 +47,10 @@ class OpenGlPlayerView @JvmOverloads constructor(
 
     fun setGlFilter(glFilter: GlFilterOld) {
         renderer.setGlFilter(glFilter)
+    }
+
+    fun setAspectRatio(ratio:AspectRatio) {
+        renderer.setAspectRatio(ratio)
     }
 
     fun setPlayerScaleType(playerScaleType: PlayerScaleType) {
